@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNG Rush 3D — Dhaka Auto-Rickshaw Arcade</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛺</text></svg>">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <!-- 3D Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Floating Feedback & Notifications -->
+    <div id="floating-container"></div>
+
+    <!-- Passenger & Event Speech Bubble -->
+    <div id="speech-bubble" class="hidden">
+        <span id="speech-text">যাত্রা শুভ হোক!</span>
+    </div>
+
+    <!-- In-Game HUD -->
+    <div id="hud" class="hidden">
+        <!-- Top Navigation & Metrics Bar -->
+        <div class="hud-top-bar">
+            <!-- Left: Money & Score -->
+            <div class="hud-panel hud-left">
+                <div class="hud-money-badge" id="hud-money">৳0</div>
+                <div class="hud-score-badge">SCORE: <span id="hud-score">0</span></div>
+                <div class="hud-level-badge" id="hud-level">LEVEL 1: NORMAL DAY</div>
+            </div>
+
+            <!-- Center: Destination & Prompts -->
+            <div class="hud-center">
+                <div class="hud-objective" id="hud-objective">
+                    🔍 Find & approach waiting passengers on the sidewalk
+                </div>
+                <div class="hud-pickup-prompt hidden" id="hud-pickup-prompt">
+                    SLOW DOWN TO PICK UP PASSENGER
+                </div>
+                <div class="hud-alert-banner hidden" id="hud-repair-alert">
+                    🔧 REPAIR SHOP AHEAD
+                </div>
+            </div>
+
+            <!-- Right: Health, Fuel, Speed & Timer -->
+            <div class="hud-panel hud-right">
+                <div class="hud-meters">
+                    <div class="hud-timer-badge">⏱️ <span id="hud-timer">00:00</span></div>
+                    <div class="meter-group">
+                        <span class="meter-label">CNG:</span>
+                        <div class="meter-track">
+                            <div class="meter-fill fill-condition" id="hud-condition-bar" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                    <div class="meter-group">
+                        <span class="meter-label">FUEL:</span>
+                        <div class="meter-track">
+                            <div class="meter-fill fill-fuel" id="hud-fuel-bar" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hud-speedometer" id="hud-speed">0 km/h</div>
+                <button class="hud-btn" id="btn-camera-toggle" title="Toggle Driver / Chase View (Press C)">🎥</button>
+                <button class="hud-btn" id="btn-pause-toggle" title="Pause Game (Press P or ESC)">⏸️</button>
+                <button class="hud-btn" id="btn-audio-toggle" title="Mute/Unmute Audio">🔊</button>
+            </div>
+        </div>
+
+        <!-- Bottom: Active Passenger Card -->
+        <div class="hud-bottom-bar">
+            <div class="passenger-card hidden" id="hud-passenger-card">
+                <div class="card-avatar" id="card-avatar">🎓</div>
+                <div class="card-details">
+                    <div class="card-header">
+                        <span class="card-name" id="card-name">Student in a Hurry</span>
+                        <span class="card-fare" id="card-fare">৳200</span>
+                    </div>
+                    <div class="card-patience-track">
+                        <div class="card-patience-fill" id="card-patience-bar" style="width: 100%;"></div>
+                    </div>
+                    <div class="card-note" id="card-note">Short patience, pays high tip for fast driving!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODALS & SCREENS ================= -->
+
+    <!-- 1. Start Screen -->
+    <div id="screen-start" class="modal-overlay">
+        <div class="modal-card start-card">
+            <div class="title-tagline">Dhaka Urban Transportation Arcade</div>
+            <h1 class="start-title">CNG RUSH 3D</h1>
+            <p class="start-subtitle">"Drive Smart. Pick Up. Deliver. Earn."</p>
+
+            <div class="start-stats-preview">
+                <div class="stat-item">
+                    <span class="stat-label">High Score</span>
+                    <span class="stat-val" id="start-best-score">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Best Earnings</span>
+                    <span class="stat-val" id="start-best-earnings">৳0</span>
+                </div>
+            </div>
+
+            <div class="button-stack">
+                <button class="btn-primary" id="btn-start-play">START SHIFT (PLAY)</button>
+                <button class="btn-secondary" id="btn-start-howto">HOW TO PLAY & CONTROLS</button>
+                <button class="btn-secondary" id="btn-start-exit"
+                    style="background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.25); color: #f87171;">🚪
+                    EXIT / CLOSE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. How to Play Modal -->
+    <div id="modal-howto" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h2>HOW TO PLAY</h2>
+            <div class="howto-grid">
+                <div class="howto-box">
+                    <h4>🚗 Controls</h4>
+                    <ul>
+                        <li><kbd>W</kbd> / <kbd>↑</kbd> Accelerate</li>
+                        <li><kbd>S</kbd> / <kbd>↓</kbd> Brake / Reverse</li>
+                        <li><kbd>A</kbd> / <kbd>←</kbd> Steer Left</li>
+                        <li><kbd>D</kbd> / <kbd>→</kbd> Steer Right</li>
+                        <li><kbd>C</kbd> / <kbd>V</kbd> <strong>Driver / Chase View</strong></li>
+                        <li><kbd>SPACE</kbd> Horn (Honk)</li>
+                        <li><kbd>P</kbd> / <kbd>ESC</kbd> <strong>Pause Game</strong></li>
+                        <li><kbd>R</kbd> Quick Restart</li>
+                    </ul>
+                </div>
+                <div class="howto-box">
+                    <h4>👥 Passenger Types</h4>
+                    <ul>
+                        <li>🎓 <strong>Student:</strong> Fast pace, big tip for speed.</li>
+                        <li>👴 <strong>Elderly:</strong> Sensitive to bumps & potholes.</li>
+                        <li>🧳 <strong>Family:</strong> Heavy luggage slows CNG.</li>
+                        <li>💼 <strong>Office-goer:</strong> Hates horn spamming!</li>
+                    </ul>
+                </div>
+                <div class="howto-box">
+                    <h4>🚧 Obstacles & Damage</h4>
+                    <ul>
+                        <li>🧱 <strong>Concrete Median Dividers:</strong> Island divider blocks between lanes deal damage when hit!</li>
+                        <li>🚶 <strong>Outside Road Pedestrians:</strong> Driving onto sidewalks and hitting pedestrians damages your vehicle and incurs fines!</li>
+                        <li>💥 <strong>Barricades & Hazards:</strong> Deal 25% damage! Multiple hits break the car.</li>
+                        <li>🔧 <strong>Garage (৳20):</strong> Pull over at roadside repair shops to restore CNG to 100% condition for ৳20.</li>
+                    </ul>
+                </div>
+                <div class="howto-box">
+                    <h4>⛽ Fuel & Mechanics</h4>
+                    <ul>
+                        <li>⏳ <strong>4-Min Fuel Limit:</strong> Engine stalls after 4 mins without refueling! Warning
+                            alert given at 3 mins.</li>
+                        <li>⛽ <strong>CNG Gas Stations:</strong> Stop at pumps to restore fuel to 100%.</li>
+                        <li>🎥 <strong>Driver View:</strong> Press C/V for cockpit view!</li>
+                        <li>⏸️ <strong>Pause / Exit:</strong> Press P or ESC to pause anytime.</li>
+                    </ul>
+                </div>
+            </div>
+            <button class="btn-secondary" id="btn-close-howto" style="width: 100%;">BACK TO MENU</button>
+        </div>
+    </div>
+
+    <!-- 3. Pause Modal -->
+    <div id="modal-pause" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h2>GAME PAUSED ⏸️</h2>
+            <p style="color: #94a3b8; margin-bottom: 22px;">Take a breath before diving back into Dhaka traffic.</p>
+            <div class="button-stack">
+                <button class="btn-primary" id="btn-pause-resume">▶ RESUME GAME (ESC / P)</button>
+                <button class="btn-secondary" id="btn-pause-camera">🎥 SWITCH VIEW (DRIVER / CHASE) [C]</button>
+                <button class="btn-secondary" id="btn-pause-restart">🔄 RESTART SHIFT (R)</button>
+                <button class="btn-secondary" id="btn-pause-menu"
+                    style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.35); color: #fca5a5;">🚪
+                    EXIT TO MAIN MENU</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Level Up Modal -->
+    <div id="modal-levelup" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h2 id="levelup-title" style="color: var(--cng-green);">LEVEL COMPLETE!</h2>
+            <p id="levelup-desc" style="color: #cbd5e1; margin: 12px 0 20px;"></p>
+            <table class="summary-table">
+                <tr>
+                    <td>Total Earnings:</td>
+                    <td id="levelup-earnings" style="color: var(--cng-green);">৳0</td>
+                </tr>
+                <tr>
+                    <td>Trips Completed:</td>
+                    <td id="levelup-trips">0</td>
+                </tr>
+            </table>
+            <button class="btn-primary" id="btn-next-level" style="width: 100%;">NEXT LEVEL ➔</button>
+        </div>
+    </div>
+
+    <!-- 5. Day Complete / Game Over Modal -->
+    <div id="modal-gameover" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h2 id="gameover-title">DAY COMPLETE!</h2>
+            <p id="gameover-subtitle" style="color: #94a3b8; margin-bottom: 16px;"></p>
+            <table class="summary-table">
+                <tr>
+                    <td>Total Earnings:</td>
+                    <td id="go-final-earnings" style="color: var(--cng-green); font-size: 18px;">৳0</td>
+                </tr>
+                <tr>
+                    <td>Final Score:</td>
+                    <td id="go-final-score">0</td>
+                </tr>
+                <tr>
+                    <td>Trips Completed:</td>
+                    <td id="go-trips-done">0</td>
+                </tr>
+                <tr>
+                    <td>Average Rating:</td>
+                    <td id="go-rating" style="color: var(--cng-amber);">5.0 ★</td>
+                </tr>
+                <tr>
+                    <td>Collisions:</td>
+                    <td id="go-collisions">0</td>
+                </tr>
+                <tr>
+                    <td>Horn Uses:</td>
+                    <td id="go-horns">0</td>
+                </tr>
+                <tr>
+                    <td>All-Time Best Score:</td>
+                    <td id="go-high-score" style="color: var(--cng-cyan);">0</td>
+                </tr>
+            </table>
+            <button class="btn-primary" id="btn-gameover-restart" style="width: 100%;">PLAY AGAIN (R)</button>
+        </div>
+    </div>
+
+    <!-- Local Runtime Libraries & Modular Game Scripts -->
+    <script src="libs/three.min.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/models.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/camera.js"></script>
+    <script src="js/road.js"></script>
+    <script src="js/traffic.js"></script>
+    <script src="js/passenger.js"></script>
+    <script src="js/events.js"></script>
+    <script src="js/scoring.js"></script>
+    <script src="js/levels.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/game.js"></script>
+</body>
+
+</html>

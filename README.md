@@ -14,14 +14,18 @@ Built for university game-development presentations — completely self-containe
 ## 🎮 Game Overview
 
 Step into the shoes of a Dhaka CNG auto-rickshaw driver!
-- 🚏 **Find & Pick Up Passengers**: Locate waiting commuters along Dhaka sidewalks.
-- 🚗 **Navigate Heavy Traffic**: Dodge colorful Dhaka city buses, cycle-rickshaws (রিকশা), private cars, and fellow CNGs.
+- 🚏 **Find & Pick Up Passengers**: Locate waiting commuters along Dhaka sidewalks with glowing green beacons and 3D billboards.
+- 🎯 **Dynamic Missed Target Updating**:
+  - **Missed Passenger**: If you drive past a waiting passenger without slowing down, the passenger speaks up, and the target immediately re-routes to the next passenger ahead.
+  - **Missed Drop Station**: If you overshoot the drop station, the passenger reacts with dialogue, and the drop target automatically relocates to the next station ahead down the road.
+- 🚗 **Navigate Heavy Traffic**: Dodge colorful Dhaka city buses, cycle-rickshaws (*রিকশা*), private cars, and fellow CNGs.
 - 🛣️ **Choose Routes**: Decide between the **Safe Main Road** (dense traffic) or the **Risky Shortcut** (faster, but riddled with potholes).
-- 🚧 **Hazard Barricades & Breakdowns**: Avoid road construction obstacles — severe collisions inflict 25% damage; after multiple hits, the CNG breaks down!
-- 🔧 **Roadside Repair Shops (গ্যারেজ)**: Pull over into roadside garages to repair vehicle health to 100% for **৳20**, with advance in-front alert notifications.
-- ⛽ **4-Minute Fuel Timer**: Stop at CNG filling stations before the 4-minute timer expires (alert warning sounded at 3 minutes).
-- 🐄 **Cultural Events**: React to sudden road-crossing cows (*গরু*), monsoon rainstorms (*বৃষ্টি*), and flooded road puddles.
-- 💰 **Earn Bangladeshi Taka (৳)**: Manage passenger patience, minimize horn spam, and aim for the **"PERFECT TRIP!" (+৳50)** bonus.
+- 🚧 **Hazard Barricades & Breakdowns**: Avoid road construction obstacles — severe collisions inflict damage; if durability reaches 0%, the CNG breaks down!
+- 🔧 **Roadside Garages (মা মটরস — ৳২০)**: Pull into roadside repair bays (< 4 km/h) to restore vehicle condition to 100% for **৳20**. If the driver lacks sufficient funds, repair **will not happen**!
+- ⛽ **4-Minute Fuel Timer & Filling Stations (৳২৫)**: Stop at roadside CNG filling stations (< 4 km/h) before fuel expires to refill the tank for **৳25**. If the driver lacks sufficient funds, refuel **will not happen**!
+- 🚪 **Expressway Level Signboard Gates**: Complete your level trip quota and drive through the high-definition Dhaka Elevated Expressway overhead gantry signboard gate to seamlessly transition to the next level without popup interruptions.
+- 🚶 **Cultural Events**: React to pedestrians crossing the road (*পথচারী পারাপার*), monsoon rainstorms (*বৃষ্টি*), and flooded road puddles.
+- 💰 **Earn Bangladeshi Taka (৳)**: Manage passenger patience, avoid collisions, and aim for the **"PERFECT TRIP!" (+৳50)** bonus.
 
 ---
 
@@ -55,24 +59,29 @@ Each passenger features tailored behaviors, patience thresholds, and tipping cri
 - 🧳 **Family with Luggage**: Heavy luggage noticeably affects CNG acceleration and steering weight.
 - 💼 **Office-Goer**: Values quiet, professional driving; dislikes horn spamming and rewards horn discipline.
 
-### 3. Obstacles, Durability & Breakdown
-- **Road Obstacles & Collisions**: Construction barricades with yellow hazard stripes and flashing amber lamps inflict **25% damage** and bounce the vehicle back.
-- **Vehicle Breakdown**: If condition drops to 0%, the engine stalls, dense black smoke billows, and the vehicle breaks down, ending the game.
+### 3. Dynamic Target Retargeting System
+- **Missed Pickup Detection**: Driving past a waiting passenger without slowing down below 18 km/h triggers pedestrian voice feedback, shows `MISSED PASSENGER! TARGETING NEXT PASSENGER ❯❯`, and immediately spawns a new waiting passenger 40–60m ahead with updated HUD sidewalk indicators.
+- **Missed Drop Station Retargeting**: Overshooting the drop-off zone triggers passenger dialogue (*e.g., student: "ভাইয়া স্টপ ফেলে সামনে চলে আসলেন তো!"*), applies a minor patience penalty, and automatically relocates the destination marker 260m–340m ahead to the next Dhaka location.
+- **Proximity HUD Alert**: Approaching within 30m of the destination displays an advance reminder: `SLOW DOWN (< 18 km/h) TO DROP OFF PASSENGER!`.
 
-### 4. Roadside Repair Shop (মা মটরস — ৳২০)
-- **Repair Bay**: Roadside garages with Bengali signage (*"মা মটরস — সিএনজি মেরামত ও গ্যারেজ"*) and a cyan guidance beacon.
-- **Advance In-Front Notification**: Audio chime, floating notification, and dynamic HUD distance banner alert the driver when a garage is 75m ahead.
-- **20 Taka Service**: Pull into the bay (< 4 km/h) to restore vehicle health to 100% for **৳20**.
+### 4. Economy: Refuel (৳২৫) & Repair Recovery (৳২০)
+- **CNG Refuel Station (৳২৫)**:
+  - 4-minute active driving timer before stalling out of fuel (warning alert sounded at 3 minutes).
+  - Refueling costs **৳25**. If the driver has less than ৳25, refueling is refused with verbal feedback from the pump attendant.
+- **CNG Repair Garage (৳২০)**:
+  - Roadside garages with Bengali signage (*"মা মটরস — সিএনজি মেরামত"*) and high-visibility cyan beacon.
+  - Advance warning notification displays 75m before reaching the garage.
+  - Restoring durability to 100% costs **৳20**. If the driver has less than ৳20, service is refused with verbal feedback from the mechanic.
 
-### 5. 4-Minute Fuel Timer & Refueling
-- **Active Fuel Timer**: 4 minutes (240s) of active driving per tank.
-- **3-Minute Alert (180s)**: Warning beep sound, pulsing red HUD fuel gauge, and Bengali speech bubble alert (*"⚠️ ভাইজান, গ্যাস প্রায় শেষ!"*).
-- **Engine Stall**: Car stalls and shuts down at 4 minutes if not refueled.
-- **Refueling**: Stopping at roadside CNG gas stations fills the tank to 100% and resets the 4-minute timer.
+### 5. Dhaka Elevated Expressway Level Signboard Gates
+- Replaces disruptive modal popups with physical 3D overhead expressway gantry gates.
+- Built with structural steel towers, concrete impact crash barriers with hazard stripes, amber flashing strobe beacons, and dual electronic green LED lane indicators (⬇ open arrows).
+- Features authentic double-sided highway green overhead signage displaying authority headers, yellow route shields (`LEVEL {id}`), speed limits, and clear bilingual instructions.
+- Driving through the gate seamlessly transitions into the next level with celebratory fanfare and free refuel bonuses.
 
 ### 6. 4 Escalating Challenge Levels
 1. **Level 1 — Normal Day**: Clear afternoon, gentle traffic, passenger pickup & delivery tutorial.
-2. **Level 2 — Busy Road**: Denser traffic, cow crossings (*গরু*), and route choice gantries.
+2. **Level 2 — Busy Road**: Denser traffic, cycle-rickshaws, and route choice gantries.
 3. **Level 3 — Rainy Day**: Monsoon storm particle rain, wet asphalt reflections, reduced traction, potholes, and flooded puddles.
 4. **Level 4 — Rush Hour**: Peak Dhaka congestion, tight passenger patience, aggressive traffic, and multi-obstacle hazards.
 
@@ -82,7 +91,7 @@ Each passenger features tailored behaviors, patience thresholds, and tipping cri
 - Dual-frequency Dhaka electric auto-rickshaw horn.
 - Mechanical ratchet clicks and repair completion chimes.
 - Fuel alert warning beeps and engine stall splutters.
-- Metal crunches, pothole thuds, water splashes, cow moos, and cash chimes.
+- Metal crunches, pothole thuds, water splashes, passenger pickup arpeggios, and cash coin chimes.
 
 ---
 
@@ -92,18 +101,19 @@ Each passenger features tailored behaviors, patience thresholds, and tipping cri
 CNG Rush 2/
 ├── index.html           # Main game entry point & UI overlay modals
 ├── README.md            # Complete game documentation & guide
+├── README.txt           # Plain-text offline documentation
 ├── css/
 │   └── style.css        # Responsive glassmorphic UI, animations & HUD styling
 ├── js/
 │   ├── game.js          # Core game loop, scene management & state controller
-│   ├── player.js        # CNG arcade vehicle physics, fuel timer & damage handling
-│   ├── models.js        # Low-poly 3D models (CNG, Bus, Rickshaw, Garage, Barricades)
-│   ├── road.js          # Modular infinite recyclable road & obstacle system
+│   ├── player.js        # CNG arcade vehicle physics, fuel timer, refuel & repair logic
+│   ├── models.js        # Low-poly 3D models (CNG, Bus, Rickshaw, Garage, Expressway Gates)
+│   ├── road.js          # Modular infinite recyclable road, stations & obstacle system
 │   ├── traffic.js       # Dhaka traffic AI, lane management & vehicle pooling
-│   ├── passengers.js    # Passenger generation, patience timers & delivery logic
+│   ├── passenger.js     # Passenger generation, patience timers & dynamic retargeting
 │   ├── camera.js        # Dual-mode camera (Cockpit Driver View & Chase View)
 │   ├── audio.js         # Procedural Web Audio API sound synthesizer
-│   ├── events.js        # Random events (Cow crossing, rainstorm, flooded road)
+│   ├── events.js        # Environmental events (Pedestrian crossing, rainstorm, flooded road)
 │   ├── scoring.js       # Fare calculations, tip economy, fines & localStorage
 │   └── levels.js        # 4-stage level progression & traffic difficulty scaling
 └── libs/
@@ -116,9 +126,9 @@ CNG Rush 2/
 
 | Member | Focus Area | Key Modules |
 | :--- | :--- | :--- |
-| **Member 1** | Vehicle Physics & Collision System | [`js/player.js`](file:///e:/Projects/CNG%20Rush%202/js/player.js), [`js/camera.js`](file:///e:/Projects/CNG%20Rush%202/js/camera.js) |
-| **Member 2** | 3D Environment & Traffic Management | [`js/models.js`](file:///e:/Projects/CNG%20Rush%202/js/models.js), [`js/road.js`](file:///e:/Projects/CNG%20Rush%202/js/road.js), [`js/traffic.js`](file:///e:/Projects/CNG%20Rush%202/js/traffic.js), [`js/events.js`](file:///e:/Projects/CNG%20Rush%202/js/events.js) |
-| **Member 3** | UI/UX, Passenger Economy & Audio Engine | [`js/game.js`](file:///e:/Projects/CNG%20Rush%202/js/game.js), [`js/ui.js`](file:///e:/Projects/CNG%20Rush%202/js/ui.js), [`js/audio.js`](file:///e:/Projects/CNG%20Rush%202/js/audio.js), [`js/passengers.js`](file:///e:/Projects/CNG%20Rush%202/js/passengers.js), [`js/scoring.js`](file:///e:/Projects/CNG%20Rush%202/js/scoring.js) |
+| **Member 1** | Vehicle Physics, Refuel & Repair Mechanics | [`js/player.js`](file:///e:/Projects/CNG%20Rush%202/js/player.js), [`js/camera.js`](file:///e:/Projects/CNG%20Rush%202/js/camera.js) |
+| **Member 2** | 3D Environment, Gantry Gates & Traffic Management | [`js/models.js`](file:///e:/Projects/CNG%20Rush%202/js/models.js), [`js/road.js`](file:///e:/Projects/CNG%20Rush%202/js/road.js), [`js/traffic.js`](file:///e:/Projects/CNG%20Rush%202/js/traffic.js), [`js/events.js`](file:///e:/Projects/CNG%20Rush%202/js/events.js) |
+| **Member 3** | UI/UX, Passenger Economy & Audio Engine | [`js/game.js`](file:///e:/Projects/CNG%20Rush%202/js/game.js), [`js/ui.js`](file:///e:/Projects/CNG%20Rush%202/js/ui.js), [`js/audio.js`](file:///e:/Projects/CNG%20Rush%202/js/audio.js), [`js/passenger.js`](file:///e:/Projects/CNG%20Rush%202/js/passenger.js), [`js/scoring.js`](file:///e:/Projects/CNG%20Rush%202/js/scoring.js), [`js/levels.js`](file:///e:/Projects/CNG%20Rush%202/js/levels.js) |
 
 ---
 
