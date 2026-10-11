@@ -902,6 +902,23 @@ body {
     .start-title {
         font-size: 42px;
     }
+
+    #floating-container {
+        top: 24%;
+        gap: 6px;
+    }
+
+    .floating-feedback {
+        font-size: 15px;
+        padding: 5px 14px;
+        border-radius: 20px;
+    }
+
+    #speech-bubble {
+        bottom: 150px;
+        font-size: 13px;
+        padding: 7px 16px;
+    }
 }
 
 /* ================= MOBILE RESPONSIVE (max-width: 768px) ================= */
@@ -1090,17 +1107,62 @@ body {
     }
 
     /* Floating Feedback & Speech */
+    #floating-container {
+        top: 17%;
+        gap: 4px;
+        width: auto;
+        max-width: 90vw;
+    }
+
     .floating-feedback {
-        font-size: 17px;
-        padding: 6px 14px;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 14px;
+        letter-spacing: 0.2px;
+        line-height: 1.25;
+        max-width: 88vw;
+        text-align: center;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+        animation: floatUpMobile 1.6s forwards cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+
+    @keyframes floatUpMobile {
+        0% {
+            opacity: 0;
+            transform: translateY(8px) scale(0.92);
+        }
+        15% {
+            opacity: 1;
+            transform: translateY(0) scale(1.02);
+        }
+        30% {
+            transform: translateY(-2px) scale(1);
+        }
+        80% {
+            opacity: 1;
+            transform: translateY(-14px) scale(1);
+        }
+        100% {
+            opacity: 0;
+            transform: translateY(-24px) scale(0.95);
+        }
     }
 
     #speech-bubble {
-        bottom: 148px;
-        max-width: 86vw;
-        font-size: 13px;
-        padding: 8px 16px;
+        bottom: 135px;
+        max-width: 76vw;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 5px 12px;
+        border-radius: 14px;
         text-align: center;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
+
+    #speech-bubble::after {
+        bottom: -6px;
+        border-width: 6px 6px 0;
     }
 
     /* Modals & Dialogs on Mobile */
@@ -1226,6 +1288,24 @@ body {
 
     .touch-text {
         font-size: 8px;
+    }
+
+    #floating-container {
+        top: 16%;
+        gap: 3px;
+    }
+
+    .floating-feedback {
+        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 12px;
+    }
+
+    #speech-bubble {
+        bottom: 126px;
+        max-width: 80vw;
+        font-size: 10px;
+        padding: 4px 9px;
     }
 }
 
@@ -1353,5 +1433,29 @@ body {
     .btn-secondary {
         padding: 8px 14px;
         font-size: 12px;
+    }
+
+    #floating-container {
+        top: 14%;
+        gap: 3px;
+    }
+
+    .floating-feedback {
+        font-size: 10.5px;
+        padding: 2px 8px;
+        border-radius: 10px;
+    }
+
+    #speech-bubble {
+        bottom: 46px;
+        max-width: 50vw;
+        font-size: 10px;
+        padding: 3px 8px;
+        border-radius: 10px;
+    }
+
+    #speech-bubble::after {
+        bottom: -5px;
+        border-width: 5px 5px 0;
     }
 }
