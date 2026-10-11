@@ -376,8 +376,6 @@ class PassengerManager {
                 if (playerSpeedKmh <= 18) {
                     const result = this.completeTrip();
                     return { status: 'completed', result: result };
-                } else {
-                    window.ui.showFloatingText('SLOW DOWN TO STOP!', '#ffeb3b');
                 }
             } else if (distToDest < -12.0) {
                 // Player passed the destination without stopping - update target to next drop station!
@@ -537,7 +535,6 @@ class PassengerManager {
             isPerfect = true;
             tip += 50;
             window.soundManager.playFanfare();
-            window.ui.showFloatingText('★ PERFECT TRIP! +৳50 BONUS ★', '#ffd700');
         }
 
         const totalEarned = this.fare + tip;
@@ -548,7 +545,15 @@ class PassengerManager {
         if (isPerfect) farewell = 'মাশাআল্লাহ! অসাধারণ চালিয়েছেন ভাই, এই নিন বকশিশ!';
         else if (tip > 0) farewell = 'খুব ভালো লেগেছে, বকশিশটা রাখুন!';
         window.ui.showSpeechBubble(this.currentPassenger.avatar + ' ' + farewell, 3.0);
-        window.ui.showFloatingText(`+৳${totalEarned} (Fare: ৳${this.fare}, Tip: ৳${tip})`, '#00e676');
+
+        // Exactly ONE single consolidated trip completion notification
+        if (isPerfect) {
+            window.ui.showFloatingText(`★ PERFECT TRIP! +৳${totalEarned} (Fare: ৳${this.fare}, Tip: ৳${tip})`, '#ffd700');
+        } else if (tip > 0) {
+            window.ui.showFloatingText(`✓ TRIP COMPLETE! +৳${totalEarned} (Fare: ৳${this.fare}, Tip: ৳${tip})`, '#00e676');
+        } else {
+            window.ui.showFloatingText(`✓ TRIP COMPLETE! +৳${totalEarned}`, '#00e676');
+        }
 
         const summary = {
             passenger: this.currentPassenger,

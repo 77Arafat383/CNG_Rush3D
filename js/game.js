@@ -428,17 +428,18 @@ class GameEngine {
             // Check if level requirements are fulfilled
             const checkResult = window.levelManager.onTripCompleted(tripUpdate.result.total);
             if (checkResult && checkResult.levelComplete) {
-                if (checkResult.isLastLevel) {
-                    // Spawn final victory gate ahead
-                    this.road.spawnLevelGate(this.player.position.z, null, true, false);
-                    window.soundManager.playNotificationChime();
-                    window.ui.showFloatingText('🏁 ALL TRIPS COMPLETE! DRIVE THROUGH THE VICTORY GATE AHEAD!', '#ffd700');
-                } else {
-                    // Spawn Next Level Gate ahead
-                    this.road.spawnLevelGate(this.player.position.z, checkResult.nextLevel, false, false);
-                    window.soundManager.playNotificationChime();
-                    window.ui.showFloatingText(`🚪 GATE AHEAD: ${checkResult.nextLevel.title.toUpperCase()}! DRIVE THROUGH!`, '#00e5ff');
-                }
+                setTimeout(() => {
+                    if (this.state !== 'PLAYING') return;
+                    if (checkResult.isLastLevel) {
+                        this.road.spawnLevelGate(this.player.position.z, null, true, false);
+                        window.soundManager.playNotificationChime();
+                        window.ui.showFloatingText('🏁 ALL TRIPS COMPLETE! DRIVE THROUGH THE VICTORY GATE AHEAD!', '#ffd700');
+                    } else {
+                        this.road.spawnLevelGate(this.player.position.z, checkResult.nextLevel, false, false);
+                        window.soundManager.playNotificationChime();
+                        window.ui.showFloatingText(`🚪 GATE AHEAD: ${checkResult.nextLevel.title.toUpperCase()}! DRIVE THROUGH!`, '#00e5ff');
+                    }
+                }, 1800);
             }
         }
 

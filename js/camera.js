@@ -17,14 +17,9 @@ class ChaseCamera {
         this.lookAheadDistance = 6.0;
 
         // Driver Camera parameters (inside CNG cockpit)
-        this.driverEyeOffset = new THREE.Vector3(0, 1.46, 0.48); // Cockpit eye position
-        this.driverLookAhead = 25.0;
-
-        // Smooth interpolation factors
-        this.posLerpChase = 0.14;
-        this.lookLerpChase = 0.18;
-        this.posLerpDriver = 0.55; // Tighter tracking for cockpit
-        this.lookLerpDriver = 0.45;
+        this.driverEyeOffset = new THREE.Vector3(0, 1.44, 0.50); // Cockpit eye position
+        this.driverLookAhead = 28.0;
+        this.smoothedGlance = 0; // Soft damped steering glance
 
         // Current actual position and look target
         this.currentPos = new THREE.Vector3();
@@ -57,6 +52,7 @@ class ChaseCamera {
         const pPos = this.target.position;
         const yaw = this.target.rotation.y;
         const forward = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+        this.smoothedGlance = 0;
 
         if (this.viewMode === 'CHASE') {
             this.currentPos.set(
@@ -69,11 +65,13 @@ class ChaseCamera {
                 pPos.y + this.lookAtHeight,
                 pPos.z + forward.z * this.lookAheadDistance
             );
+            this.camera.up.set(0, 1, 0);
         } else {
             // First-person Driver cockpit view
-            const eye = this.driverEyeOffset.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+            const eye = this.driverEyeOffset.clone().applyEuler(this.target.rotation);
             this.currentPos.copy(pPos).add(eye);
             this.currentLookAt.copy(this.currentPos).add(forward.clone().multiplyScalar(this.driverLookAhead));
+            this.camera.up.set(0, 1, 0);
         }
 
         this.camera.position.copy(this.currentPos);
@@ -87,6 +85,7 @@ class ChaseCamera {
 
     update(dt) {
         if (!this.target) return;
+        if (dt > 0.1) dt = 0.1; // Clamp delta time spike
 
         const pPos = this.target.position;
         const yaw = this.target.rotation.y;
@@ -94,11 +93,15 @@ class ChaseCamera {
 
         let targetPos = new THREE.Vector3();
         let targetLookAt = new THREE.Vector3();
-        let curPosLerp = this.posLerpChase;
-        let curLookLerp = this.lookLerpChase;
+        let posFactor = 0.15;
+        let lookFactor = 0.18;
 
         if (this.viewMode === 'CHASE') {
-            // Adjust distance slightly with speed for dynamic feel
+            // Third-Person Chase Mode: Framerate-independent smooth tracking
+            posFactor = 1.0 - Math.exp(-7.0 * dt);
+            lookFactor = 1.0 - Math.exp(-9.0 * dt);
+
+            // Dynamic distance slightly increases with speed
             const speedRatio = Math.max(0, this.target.speed / this.target.maxSpeed);
             const dynamicDist = this.distBehind + speedRatio * 0.8;
             const dynamicHeight = this.heightAbove + speedRatio * 0.3;
@@ -114,45 +117,56 @@ class ChaseCamera {
                 pPos.y + this.lookAtHeight,
                 pPos.z + forward.z * this.lookAheadDistance
             );
-        } else {
-            // DRIVER VIEW (First-Person Cockpit View)
-            curPosLerp = this.posLerpDriver;
-            curLookLerp = this.lookLerpDriver;
 
-            const eye = this.driverEyeOffset.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+            // Keep upright
+            this.camera.up.lerp(new THREE.Vector3(0, 1, 0), 1.0 - Math.exp(-10.0 * dt));
+        } else {
+            // DRIVER VIEW (Silky-Smooth First-Person Cockpit View)
+            // Framerate-independent tight tracking
+            posFactor = 1.0 - Math.exp(-22.0 * dt);
+            lookFactor = 1.0 - Math.exp(-15.0 * dt);
+
+            // Eye position locked directly to CNG chassis orientation (yaw, roll & pitch)
+            const eye = this.driverEyeOffset.clone().applyEuler(this.target.rotation);
             targetPos.copy(pPos).add(eye);
 
-            // Dynamic glance when steering
-            const glanceAngle = yaw + this.target.steerAngle * 0.35;
+            // Softly damped steering glance into turns (prevents jerky camera whiplash)
+            const targetGlanceAngle = (this.target.steerAngle || 0) * 0.10;
+            const glanceSmoothing = 1.0 - Math.exp(-5.5 * dt);
+            this.smoothedGlance = THREE.MathUtils.lerp(this.smoothedGlance, targetGlanceAngle, glanceSmoothing);
+
+            const glanceAngle = yaw + this.smoothedGlance;
             const glanceForward = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), glanceAngle);
 
+            // Smooth pitch adjustment following road gradient and chassis pitch
+            const pitchFactor = (this.target.rotation.x || 0) * 0.35 - 0.06;
+            glanceForward.y += pitchFactor;
+
             targetLookAt.copy(targetPos).add(glanceForward.multiplyScalar(this.driverLookAhead));
-            targetLookAt.y = targetPos.y - 0.2; // Level horizon with slight road focus
+
+            // Subtle, silky chassis banking tilt in cockpit view
+            const bankAngle = -(this.target.rotation.z || 0) * 0.35;
+            const targetUp = new THREE.Vector3(0, 1, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), bankAngle);
+            this.camera.up.lerp(targetUp, 1.0 - Math.exp(-12.0 * dt));
         }
 
-        // Smooth Lerp
-        this.currentPos.lerp(targetPos, curPosLerp);
-        this.currentLookAt.lerp(targetLookAt, curLookLerp);
+        // Apply framerate-independent smooth interpolation
+        this.currentPos.lerp(targetPos, posFactor);
+        this.currentLookAt.lerp(targetLookAt, lookFactor);
 
-        // Screen Shake calculation
+        // Screen Shake calculation (potholes & collisions only)
         this.shakeOffset.set(0, 0, 0);
         if (this.shakeIntensity > 0.01) {
             this.shakeIntensity = Math.max(0, this.shakeIntensity - this.shakeDecay * dt);
-            const rX = (Math.random() * 2 - 1) * this.shakeIntensity * 0.45;
-            const rY = (Math.random() * 2 - 1) * this.shakeIntensity * 0.35;
-            const rZ = (Math.random() * 2 - 1) * this.shakeIntensity * 0.3;
+            const rX = (Math.random() * 2 - 1) * this.shakeIntensity * 0.35;
+            const rY = (Math.random() * 2 - 1) * this.shakeIntensity * 0.25;
+            const rZ = (Math.random() * 2 - 1) * this.shakeIntensity * 0.2;
             this.shakeOffset.set(rX, rY, rZ);
         }
 
-        // Subtle engine RPM vibration in cockpit view
-        if (this.viewMode === 'DRIVER' && Math.abs(this.target.speed) > 0.1) {
-            const vib = Math.sin(Date.now() * 0.06) * 0.012 * (Math.abs(this.target.speed) / this.target.maxSpeed);
-            this.shakeOffset.y += vib;
-        }
-
-        // Apply final position & lookAt
+        // Apply final smoothed position & lookAt
         this.camera.position.copy(this.currentPos).add(this.shakeOffset);
-        this.camera.lookAt(this.currentLookAt.clone().add(this.shakeOffset.clone().multiplyScalar(0.5)));
+        this.camera.lookAt(this.currentLookAt.clone().add(this.shakeOffset.clone().multiplyScalar(0.4)));
     }
 }
 
