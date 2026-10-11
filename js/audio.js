@@ -133,27 +133,64 @@ class SoundManager {
         if (!this.ctx || this.isMuted) return;
         this.resume();
         const now = this.ctx.currentTime;
-        // Iconic dual-tone auto-rickshaw horn (460Hz and 580Hz)
+        const dur = 0.32;
+
+        // Real Dhaka CNG twin-disc electric horn (authentic frequencies ~415Hz & 518Hz)
         const osc1 = this.ctx.createOscillator();
         const osc2 = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+        const oscHarmonic = this.ctx.createOscillator();
 
         osc1.type = 'sawtooth';
-        osc2.type = 'square';
-        osc1.frequency.setValueAtTime(466, now);
-        osc2.frequency.setValueAtTime(587, now);
+        osc2.type = 'sawtooth';
+        oscHarmonic.type = 'square';
 
-        gain.gain.setValueAtTime(0.25, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+        osc1.frequency.setValueAtTime(415, now);
+        osc2.frequency.setValueAtTime(518, now);
+        oscHarmonic.frequency.setValueAtTime(832, now);
 
-        osc1.connect(gain);
-        osc2.connect(gain);
-        gain.connect(this.masterGain);
+        // Acoustic resonator filter (disc horn metallic throat resonance)
+        const hornFilter = this.ctx.createBiquadFilter();
+        hornFilter.type = 'peaking';
+        hornFilter.frequency.setValueAtTime(2150, now);
+        hornFilter.Q.setValueAtTime(2.5, now);
+        hornFilter.gain.setValueAtTime(6.5, now);
+
+        // Diaphragm saturation shaper (authentic brassy metallic buzzer bite)
+        const waveShaper = this.ctx.createWaveShaper();
+        const n_samples = 256;
+        const curve = new Float32Array(n_samples);
+        for (let i = 0; i < n_samples; ++i) {
+            const x = (i * 2) / n_samples - 1;
+            curve[i] = (Math.PI + 3) * x / (Math.PI + 3 * Math.abs(x));
+        }
+        waveShaper.curve = curve;
+
+        const mainGain = this.ctx.createGain();
+        mainGain.gain.setValueAtTime(0.001, now);
+        mainGain.gain.linearRampToValueAtTime(0.35, now + 0.015);
+        mainGain.gain.setValueAtTime(0.32, now + dur - 0.06);
+        mainGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+        const harmGain = this.ctx.createGain();
+        harmGain.gain.setValueAtTime(0.12, now);
+
+        oscHarmonic.connect(harmGain);
+        harmGain.connect(waveShaper);
+
+        osc1.connect(waveShaper);
+        osc2.connect(waveShaper);
+
+        waveShaper.connect(hornFilter);
+        hornFilter.connect(mainGain);
+        mainGain.connect(this.masterGain);
 
         osc1.start(now);
         osc2.start(now);
-        osc1.stop(now + 0.36);
-        osc2.stop(now + 0.36);
+        oscHarmonic.start(now);
+
+        osc1.stop(now + dur + 0.02);
+        osc2.stop(now + dur + 0.02);
+        oscHarmonic.stop(now + dur + 0.02);
     }
 
     playCrash(severity = 'medium') {

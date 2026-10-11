@@ -686,10 +686,6 @@ body {
     transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
-.touch-controls.touch-hidden {
-    display: none !important;
-}
-
 .touch-cluster {
     display: flex;
     gap: 12px;

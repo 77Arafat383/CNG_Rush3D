@@ -15,11 +15,11 @@ class PlayerCNG {
 
         // Arcade vehicle dynamics
         this.speed = 0;              // Current forward speed (units/s)
-        this.maxSpeed = 22;          // ~65 km/h
-        this.maxReverseSpeed = -6;   // ~18 km/h
-        this.accel = 16;             // Base acceleration
-        this.brakeForce = 28;        // Braking deceleration
-        this.friction = 5.5;         // Natural coasting deceleration
+        this.maxSpeed = 30;          // ~108 km/h (Medium faster top speed)
+        this.maxReverseSpeed = -8;   // ~28 km/h
+        this.accel = 25;             // Responsive, punchy acceleration
+        this.brakeForce = 32;        // Balanced braking deceleration
+        this.friction = 4.2;         // Smooth coasting deceleration
         this.steerAngle = 0;         // Wheel steer angle
         this.maxSteerAngle = 0.55;   // ~31 degrees
         this.steerSpeed = 3.2;       // Steering responsiveness

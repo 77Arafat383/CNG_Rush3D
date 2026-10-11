@@ -41,12 +41,12 @@ class UIManager {
         this.elPatienceBar = document.getElementById('card-patience-bar');
         this.elPassNote = document.getElementById('card-note');
 
-        // Audio toggle
-        this.btnAudioToggle = document.getElementById('btn-audio-toggle');
+        // Pause Menu Controls
+        this.btnPauseCamera = document.getElementById('btn-pause-camera');
+        this.btnPauseAudio = document.getElementById('btn-pause-audio');
 
         // Touch controls
         this.touchControls = document.getElementById('touch-controls');
-        this.btnTouchToggle = document.getElementById('btn-touch-toggle');
     }
 
     setupEventListeners() {
@@ -77,16 +77,7 @@ class UIManager {
             });
         }
 
-        // HUD View & Pause Toggle buttons
-        const btnCameraToggle = document.getElementById('btn-camera-toggle');
-        if (btnCameraToggle) {
-            btnCameraToggle.addEventListener('click', () => {
-                window.soundManager.playClick();
-                const mode = window.game.toggleCameraView();
-                this.showFloatingText(mode === 'DRIVER' ? '🎥 DRIVER COCKPIT VIEW' : '🎥 CHASE VIEW', '#00e5ff');
-            });
-        }
-
+        // HUD Pause Toggle button (only button on active HUD top-right)
         const btnPauseToggle = document.getElementById('btn-pause-toggle');
         if (btnPauseToggle) {
             btnPauseToggle.addEventListener('click', () => {
@@ -105,12 +96,19 @@ class UIManager {
             window.game.resumeGame();
         });
 
-        const btnPauseCamera = document.getElementById('btn-pause-camera');
-        if (btnPauseCamera) {
-            btnPauseCamera.addEventListener('click', () => {
+        if (this.btnPauseCamera) {
+            this.btnPauseCamera.addEventListener('click', () => {
                 window.soundManager.playClick();
                 const mode = window.game.toggleCameraView();
+                this.updatePauseMenuLabels();
                 this.showFloatingText(mode === 'DRIVER' ? '🎥 DRIVER COCKPIT VIEW' : '🎥 CHASE VIEW', '#00e5ff');
+            });
+        }
+
+        if (this.btnPauseAudio) {
+            this.btnPauseAudio.addEventListener('click', () => {
+                window.soundManager.toggleMute();
+                this.updatePauseMenuLabels();
             });
         }
 
@@ -135,13 +133,7 @@ class UIManager {
             window.game.restartGame();
         });
 
-        // Audio toggle button
-        this.btnAudioToggle.addEventListener('click', () => {
-            const isMuted = window.soundManager.toggleMute();
-            this.btnAudioToggle.innerText = isMuted ? '🔇' : '🔊';
-        });
-
-        // Virtual Touch Controls setup
+        // Virtual Touch Controls setup (always active on mobile/touch)
         this.setupTouchControls();
 
         // Keyboard shortcuts (Pause, Restart, Camera View Toggle)
@@ -156,6 +148,7 @@ class UIManager {
             if (e.key === 'c' || e.key === 'C' || e.key === 'v' || e.key === 'V') {
                 if (window.game.state === 'PLAYING' || window.game.state === 'PAUSED') {
                     const mode = window.game.toggleCameraView();
+                    this.updatePauseMenuLabels();
                     this.showFloatingText(mode === 'DRIVER' ? '🎥 DRIVER COCKPIT VIEW' : '🎥 CHASE VIEW', '#00e5ff');
                 }
             }
@@ -163,6 +156,16 @@ class UIManager {
                 window.game.restartGame();
             }
         });
+    }
+
+    updatePauseMenuLabels() {
+        if (this.btnPauseCamera && window.game && window.game.chaseCamera) {
+            const isDriver = window.game.chaseCamera.viewMode === 'DRIVER';
+            this.btnPauseCamera.innerText = isDriver ? '🎥 CAMERA VIEW: COCKPIT DRIVER [C]' : '🎥 CAMERA VIEW: CHASE [C]';
+        }
+        if (this.btnPauseAudio && window.soundManager) {
+            this.btnPauseAudio.innerText = window.soundManager.isMuted ? '🔇 AUDIO SOUND: OFF (MUTED)' : '🔊 AUDIO SOUND: ON';
+        }
     }
 
     setupTouchControls() {
@@ -209,17 +212,6 @@ class UIManager {
         bindButton('touch-drive', 'forward');
         bindButton('touch-brake', 'backward');
         bindButton('touch-horn', 'horn');
-
-        // Toggle button on HUD
-        if (this.btnTouchToggle) {
-            this.btnTouchToggle.addEventListener('click', () => {
-                window.soundManager.playClick();
-                if (this.touchControls) {
-                    const isHidden = this.touchControls.classList.toggle('touch-hidden');
-                    this.showFloatingText(isHidden ? 'TOUCH CONTROLS HIDDEN' : 'TOUCH CONTROLS ACTIVE', '#00e5ff');
-                }
-            });
-        }
     }
 
     showStartScreen() {
@@ -253,6 +245,7 @@ class UIManager {
     }
 
     showPauseMenu() {
+        this.updatePauseMenuLabels();
         this.screenPause.classList.remove('hidden');
     }
 

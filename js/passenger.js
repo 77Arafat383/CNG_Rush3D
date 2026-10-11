@@ -235,7 +235,7 @@ class PassengerManager {
 
         // Apply passenger physical characteristics to player CNG
         if (this.currentPassenger.heavyLoad) {
-            this.player.massModifier = 1.35; // Heavy load slows acceleration and steering
+            this.player.massModifier = 1.12; // Slight realistic weight without sluggishness
         } else {
             this.player.massModifier = 1.0;
         }
