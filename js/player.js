@@ -21,9 +21,10 @@ class PlayerCNG {
         this.brakeForce = 32;        // Balanced braking deceleration
         this.friction = 4.2;         // Smooth coasting deceleration
         this.steerAngle = 0;         // Wheel steer angle
-        this.maxSteerAngle = 0.55;   // ~31 degrees
-        this.steerSpeed = 3.2;       // Steering responsiveness
-        this.steerReturn = 4.5;      // Center return speed
+        this.maxSteerAngle = 0.34;   // Tuned max wheel angle (~19.5 deg)
+        this.steerSpeed = 1.9;       // Smooth progressive steering buildup
+        this.steerReturn = 5.2;      // Crisp automatic re-centering
+
 
         // Health & durability
         this.condition = 100;        // 100% condition
@@ -248,17 +249,17 @@ class PlayerCNG {
             }
         }
 
-        // 2. Steering physics
-        // Steering becomes slightly less responsive at high speed
-        const speedRatio = Math.abs(this.speed) / this.maxSpeed;
-        const speedSteerFactor = Math.max(0.65, 1.0 - speedRatio * 0.35);
+        // 2. Steering physics (tuned for silky smooth mobile & touch control)
+        const speedRatio = Math.min(1.0, Math.abs(this.speed) / this.maxSpeed);
+        const effectiveMaxSteer = THREE.MathUtils.lerp(this.maxSteerAngle, 0.22, speedRatio);
+        const speedSteerFactor = Math.max(0.7, 1.0 - speedRatio * 0.3);
 
         if (this.inputs.left) {
-            this.steerAngle = Math.min(this.maxSteerAngle, this.steerAngle + this.steerSpeed * speedSteerFactor * dt);
+            this.steerAngle = Math.min(effectiveMaxSteer, this.steerAngle + this.steerSpeed * speedSteerFactor * dt);
         } else if (this.inputs.right) {
-            this.steerAngle = Math.max(-this.maxSteerAngle, this.steerAngle - this.steerSpeed * speedSteerFactor * dt);
+            this.steerAngle = Math.max(-effectiveMaxSteer, this.steerAngle - this.steerSpeed * speedSteerFactor * dt);
         } else {
-            // Self-centering
+            // Crisp self-centering when touch or key is released
             if (this.steerAngle > 0) {
                 this.steerAngle = Math.max(0, this.steerAngle - this.steerReturn * dt);
             } else if (this.steerAngle < 0) {
@@ -266,15 +267,23 @@ class PlayerCNG {
             }
         }
 
-        // 3. Apply vehicle yaw rotation based on speed and steer angle
+        // 3. Apply smooth yaw rotation & highway stabilization
+        const maxYaw = 0.32; // ~18.3 degrees max road heading deviation
         if (Math.abs(this.speed) > 0.05) {
-            const turnRate = (this.speed / 2.7) * Math.tan(this.steerAngle) * this.tractionModifier;
+            const turnRate = (this.speed / 5.5) * Math.sin(this.steerAngle) * this.tractionModifier;
             this.rotation.y += turnRate * dt;
         }
 
-        // 4. Update position based on facing direction
+        // Automatic highway self-straightening alignment when input is released
+        if (!this.inputs.left && !this.inputs.right) {
+            this.rotation.y += (0 - this.rotation.y) * Math.min(1.0, 4.5 * dt);
+        }
+        this.rotation.y = Math.max(-maxYaw, Math.min(maxYaw, this.rotation.y));
+
+        // 4. Update position based on facing direction + progressive lateral lane agility
         const forwardVector = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rotation.y);
-        this.position.x += forwardVector.x * this.speed * dt;
+        const lateralDrift = this.speed * Math.sin(this.steerAngle) * 0.55 * this.tractionModifier;
+        this.position.x += (forwardVector.x * this.speed * 0.65 + lateralDrift) * dt;
         this.position.z += forwardVector.z * this.speed * dt;
 
         // Lateral road & sidewalk boundaries (road is ±7.5, sidewalk extends to ±12.0)

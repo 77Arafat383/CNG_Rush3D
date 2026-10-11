@@ -611,12 +611,14 @@ const ModelFactory = {
         return pothole;
     },
 
-    createFloodPatch(width = 8, length = 15) {
-        const geo = new THREE.PlaneGeometry(width, length);
+    createFloodPatch(radius = 1.35) {
+        // Road water puddle with circular geometry matching potholes
+        const geo = new THREE.CircleGeometry(radius, 14);
         geo.rotateX(-Math.PI / 2);
         const patch = new THREE.Mesh(geo, this.materials.waterMat);
         patch.position.y = 0.03;
         patch.userData.isWater = true;
+        patch.userData.radius = radius;
         return patch;
     },
 

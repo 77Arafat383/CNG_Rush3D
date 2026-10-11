@@ -167,15 +167,25 @@ class RoadManager {
                 });
             });
         } else if (type === 'flooded') {
-            // Shallow flood water patch covering two lanes
-            const flood = ModelFactory.createFloodPatch(9, 24);
-            flood.position.set(-1.5, 0.03, 5);
-            seg.add(flood);
-            seg.userData.floods.push({
-                minX: -6.0,
-                maxX: 3.0,
-                minZ: zPosition + 5 - 12,
-                maxZ: zPosition + 5 + 12
+            // Road water puddles matching the exact scale of potholes (~1.25m - 1.4m radius)
+            const puddles = [
+                { x: -2.2, zOff: -12, radius: 1.35 },
+                { x: 1.8, zOff: 4, radius: 1.4 },
+                { x: -1.0, zOff: 20, radius: 1.25 }
+            ];
+            puddles.forEach(p => {
+                const patch = ModelFactory.createFloodPatch(p.radius);
+                patch.position.set(p.x, 0.03, p.zOff);
+                seg.add(patch);
+                seg.userData.floods.push({
+                    x: p.x,
+                    z: zPosition + p.zOff,
+                    radius: p.radius,
+                    minX: p.x - p.radius,
+                    maxX: p.x + p.radius,
+                    minZ: zPosition + p.zOff - p.radius,
+                    maxZ: zPosition + p.zOff + p.radius
+                });
             });
         } else if (type === 'blockade') {
             // Construction barricades blocking lanes with warning lights
@@ -600,7 +610,12 @@ class RoadManager {
     checkInWater(playerPos) {
         for (let i = 0; i < this.floodedZones.length; i++) {
             const f = this.floodedZones[i];
-            if (playerPos.z >= f.minZ && playerPos.z <= f.maxZ && playerPos.x >= f.minX && playerPos.x <= f.maxX) {
+            if (f.radius) {
+                const dist = Math.hypot(playerPos.x - f.x, playerPos.z - f.z);
+                if (dist <= f.radius + 0.6) {
+                    return true;
+                }
+            } else if (playerPos.z >= f.minZ && playerPos.z <= f.maxZ && playerPos.x >= f.minX && playerPos.x <= f.maxX) {
                 return true;
             }
         }
