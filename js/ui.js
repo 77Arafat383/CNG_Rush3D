@@ -393,7 +393,8 @@ class UIManager {
 
         // Active passenger card & objective navigation
         if (data.tripStatus === 'in_progress' && data.passenger) {
-            if (data.distRemaining < 30 && data.distRemaining > 0) {
+            const absDist = Math.abs(data.distRemaining || 0);
+            if (absDist < 30) {
                 this.elPickupPrompt.innerText = 'SLOW DOWN (< 18 km/h) TO DROP OFF PASSENGER!';
                 this.elPickupPrompt.style.background = '';
                 this.elPickupPrompt.classList.remove('hidden');
@@ -415,14 +416,22 @@ class UIManager {
                 this.elPatienceBar.style.backgroundColor = '#00e676';
             }
 
-            this.elObjective.innerHTML = `📍 <strong>${data.destination.name}</strong> • ${data.distRemaining}m away`;
+            if (data.isOvershot) {
+                this.elObjective.innerHTML = `📍 <strong>${data.destination.name}</strong> • ${absDist}m <strong>BEHIND</strong> ⬅ Reverse to drop off!`;
+            } else {
+                this.elObjective.innerHTML = `📍 <strong>${data.destination.name}</strong> • ${absDist}m away`;
+            }
         } else {
             this.cardPassenger.classList.add('hidden');
             if (data.waitingInfo) {
-                const arrow = data.waitingInfo.side === 'Right' ? '➔' : '⬅';
-                this.elObjective.innerHTML = `🙋 <strong>${data.waitingInfo.type.avatar} ${data.waitingInfo.type.name}</strong>: ${data.waitingInfo.dist}m ahead on <strong>${data.waitingInfo.side} Sidewalk</strong> ${arrow}`;
+                if (data.waitingInfo.isBehind) {
+                    this.elObjective.innerHTML = `🙋 <strong>${data.waitingInfo.type.avatar} ${data.waitingInfo.type.name}</strong>: ${data.waitingInfo.dist}m <strong>BEHIND</strong> ⬅ Reverse to pick up!`;
+                } else {
+                    const arrow = data.waitingInfo.side === 'Right' ? '➔' : '⬅';
+                    this.elObjective.innerHTML = `🙋 <strong>${data.waitingInfo.type.avatar} ${data.waitingInfo.type.name}</strong>: ${data.waitingInfo.dist}m ahead on <strong>${data.waitingInfo.side} Sidewalk</strong> ${arrow}`;
+                }
 
-                if (data.waitingInfo.dist < 24) {
+                if (data.waitingInfo.dist < 26) {
                     this.elPickupPrompt.innerText = 'SLOW DOWN (< 18 km/h) TO PICK UP PASSENGER!';
                     this.elPickupPrompt.style.background = '';
                     this.elPickupPrompt.classList.remove('hidden');

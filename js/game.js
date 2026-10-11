@@ -448,7 +448,7 @@ class GameEngine {
 
         // 7. Update Passengers (Pickup / In-transit / Delivery)
         const nearWaiting = this.passengers.waitingPassenger &&
-            Math.hypot(this.player.position.x - this.passengers.waitingPassenger.x, this.player.position.z - this.passengers.waitingPassenger.z) < 14;
+            Math.hypot(this.player.position.x - this.passengers.waitingPassenger.x, this.player.position.z - this.passengers.waitingPassenger.z) < 18;
 
         if (nearWaiting) {
             this.passengers.checkPickup(this.player.position, playerStatus.speedKmh);
@@ -524,6 +524,7 @@ class GameEngine {
             passenger: tripUpdate.passenger,
             destination: tripUpdate.destination,
             distRemaining: tripUpdate.distRemaining,
+            isOvershot: tripUpdate.isOvershot,
             patiencePct: tripUpdate.patiencePct,
             fare: tripUpdate.fare
         });

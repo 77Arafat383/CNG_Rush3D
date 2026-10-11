@@ -136,113 +136,41 @@ class RoadManager {
                 type: 'median_block'
             });
 
-            // Right side (shortcut) has potholes
+            // Right side (shortcut) has an isolated pothole
             const p1 = ModelFactory.createPothole('small');
-            p1.position.set(3.8, 0.02, 10);
+            p1.position.set(3.8, 0.02, 16);
             seg.add(p1);
-            seg.userData.potholes.push({ mesh: p1, worldZ: zPosition + 10, x: 3.8, radius: 0.9, severity: 'small' });
-
-            const p2 = ModelFactory.createPothole('large');
-            p2.position.set(5.2, 0.02, 22);
-            seg.add(p2);
-            seg.userData.potholes.push({ mesh: p2, worldZ: zPosition + 22, x: 5.2, radius: 1.4, severity: 'large' });
+            seg.userData.potholes.push({ mesh: p1, worldZ: zPosition + 16, x: 3.8, radius: 0.9, severity: 'small' });
         } else if (type === 'pothole_stretch') {
-            // Random potholes across different lanes
-            const pConfigs = [
-                { x: -3.5, zOff: -20, size: 'small' },
-                { x: 1.8, zOff: -5, size: 'large' },
-                { x: -1.5, zOff: 15, size: 'small' },
-                { x: 4.5, zOff: 28, size: 'large' }
-            ];
-            pConfigs.forEach(cfg => {
-                const pot = ModelFactory.createPothole(cfg.size);
-                pot.position.set(cfg.x, 0.02, cfg.zOff);
-                seg.add(pot);
-                seg.userData.potholes.push({
-                    mesh: pot,
-                    worldZ: zPosition + cfg.zOff,
-                    x: cfg.x,
-                    radius: cfg.size === 'large' ? 1.4 : 0.85,
-                    severity: cfg.size
-                });
+            // Reduced to a single isolated pothole per stretch
+            const potX = (Math.random() > 0.5 ? 2.5 : -2.5);
+            const pot = ModelFactory.createPothole('small');
+            pot.position.set(potX, 0.02, 10);
+            seg.add(pot);
+            seg.userData.potholes.push({
+                mesh: pot,
+                worldZ: zPosition + 10,
+                x: potX,
+                radius: 0.85,
+                severity: 'small'
             });
         } else if (type === 'flooded') {
-            // Road water puddles matching the exact scale of potholes (~1.25m - 1.4m radius)
-            const puddles = [
-                { x: -2.2, zOff: -12, radius: 1.35 },
-                { x: 1.8, zOff: 4, radius: 1.4 },
-                { x: -1.0, zOff: 20, radius: 1.25 }
-            ];
-            puddles.forEach(p => {
-                const patch = ModelFactory.createFloodPatch(p.radius);
-                patch.position.set(p.x, 0.03, p.zOff);
-                seg.add(patch);
-                seg.userData.floods.push({
-                    x: p.x,
-                    z: zPosition + p.zOff,
-                    radius: p.radius,
-                    minX: p.x - p.radius,
-                    maxX: p.x + p.radius,
-                    minZ: zPosition + p.zOff - p.radius,
-                    maxZ: zPosition + p.zOff + p.radius
-                });
+            // Reduced to a single isolated road water puddle
+            const waterX = (Math.random() > 0.5 ? -2.2 : 2.2);
+            const patch = ModelFactory.createFloodPatch(1.3);
+            patch.position.set(waterX, 0.03, 10);
+            seg.add(patch);
+            seg.userData.floods.push({
+                x: waterX,
+                z: zPosition + 10,
+                radius: 1.3,
+                minX: waterX - 1.3,
+                maxX: waterX + 1.3,
+                minZ: zPosition + 10 - 1.3,
+                maxZ: zPosition + 10 + 1.3
             });
         } else if (type === 'blockade') {
-            // Construction barricades blocking lanes with warning lights
-            const barricade1 = ModelFactory.createWarningBarricade(4.8);
-            barricade1.position.set(-3.2, 0, 10);
-            seg.add(barricade1);
-
-            const col1 = new THREE.Box3().setFromCenterAndSize(
-                new THREE.Vector3(-3.2, 0.8, zPosition + 10),
-                new THREE.Vector3(4.8, 1.8, 1.5)
-            );
-            seg.userData.obstacles.push({
-                mesh: barricade1,
-                collider: col1,
-                x: -3.2,
-                z: zPosition + 10,
-                damage: 25,
-                penalty: 15,
-                hit: false
-            });
-
-            // Second barricade down the stretch on opposite lane
-            const barricade2 = ModelFactory.createWarningBarricade(4.2);
-            barricade2.position.set(3.4, 0, 32);
-            seg.add(barricade2);
-
-            const col2 = new THREE.Box3().setFromCenterAndSize(
-                new THREE.Vector3(3.4, 0.8, zPosition + 32),
-                new THREE.Vector3(4.2, 1.8, 1.5)
-            );
-            seg.userData.obstacles.push({
-                mesh: barricade2,
-                collider: col2,
-                x: 3.4,
-                z: zPosition + 32,
-                damage: 25,
-                penalty: 15,
-                hit: false
-            });
-
-            // Construction warning sign
-            const cCanvas = document.createElement('canvas');
-            cCanvas.width = 128;
-            cCanvas.height = 64;
-            const cctx = cCanvas.getContext('2d');
-            cctx.fillStyle = '#ff9800';
-            cctx.fillRect(0, 0, 128, 64);
-            cctx.fillStyle = '#000000';
-            cctx.font = 'bold 16px sans-serif';
-            cctx.textAlign = 'center';
-            cctx.fillText('কাজ চলছে', 64, 28);
-            cctx.font = '12px sans-serif';
-            cctx.fillText('ROAD WORK', 64, 48);
-
-            const cMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.8), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cCanvas) }));
-            cMesh.position.set(-3.2, 1.8, 9.9);
-            seg.add(cMesh);
+            // Barricades removed - treated as clear open road segment
         } else if (type === 'repair_shop') {
             // Roadside CNG Repair Garage Workshop (re-conditions vehicle to 100% for ৳20)
             const garage = ModelFactory.createRepairShop();
@@ -451,16 +379,16 @@ class RoadManager {
         this.clear();
         this.furthestZ = 0;
 
-        // Sequence of initial segments (ensuring repair shops, blockades, fuel stations appear regularly)
+        // Sequence of initial segments (open road, no barricades)
         const initialTypes = [
             'straight',
-            'blockade',
+            'straight',
             'repair_shop',
+            'straight',
             'fork',
-            'pothole_stretch',
             'fuel_station',
-            'flooded',
-            'repair_shop'
+            'straight',
+            'pothole_stretch'
         ];
 
         for (let i = 0; i < this.numSegments; i++) {
@@ -568,8 +496,19 @@ class RoadManager {
                 this.segments.splice(i, 1);
                 i--;
 
-                // Determine next segment type based on cycle including repair shop & blockades
-                const pool = ['straight', 'pothole_stretch', 'blockade', 'repair_shop', 'fork', 'flooded', 'straight', 'fuel_station', 'blockade'];
+                // Determine next segment type (mostly straight, no barricades, rare isolated hazards)
+                const pool = [
+                    'straight',
+                    'straight',
+                    'straight',
+                    'repair_shop',
+                    'straight',
+                    'pothole_stretch',
+                    'fuel_station',
+                    'straight',
+                    'flooded',
+                    'fork'
+                ];
                 const nextType = pool[Math.floor(Math.random() * pool.length)];
 
                 this.furthestZ += this.segmentLength;

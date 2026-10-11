@@ -193,7 +193,8 @@ class PassengerManager {
             x: xPos,
             z: zPos,
             isRight: isRight,
-            radius: 8.5 // Generous pickup zone so player doesn't miss it
+            radius: 9.5, // Generous pickup zone so player easily picks up forward or reverse
+            overshotWarned: false
         };
 
         // Position Pickup Marker
@@ -257,7 +258,8 @@ class PassengerManager {
             name: destTemplate.name,
             targetZ: targetZ,
             x: 0,
-            radius: 5.5
+            radius: 7.5,
+            overshotWarned: false
         };
 
         // Position destination marker
@@ -377,25 +379,47 @@ class PassengerManager {
                     const result = this.completeTrip();
                     return { status: 'completed', result: result };
                 }
-            } else if (distToDest < -12.0) {
-                // Player passed the destination without stopping - update target to next drop station!
+            } else if (distToDest < -85.0) {
+                // Player passed far beyond destination (> 85m past, moving to next area)
                 this.onMissedDestination(playerPos.z);
+            } else if (distToDest < -8.0 && !this.destination.overshotWarned) {
+                // Gentle overshoot reminder once, keeping the destination available for reversing back!
+                this.destination.overshotWarned = true;
+                const bengaliReminders = {
+                    student: '🎓 ও ভাইয়া! স্টপ পার হয়ে গেল, একটু পেছনে যান!',
+                    elderly: '👴 ও বাবা! আমার নামার জায়গা পেছনে পড়ে রইল, একটু পিছিয়ে নাও...',
+                    family: '🧳 ভাই স্টপ পার হয়ে আসছেন, একটু রিভার্স করে নামিয়ে দিন!',
+                    office: '💼 আরে স্টপ তো ফেলে আসলেন! একটু পেছনে আসুন দয়া করে!'
+                };
+                const reminderMsg = bengaliReminders[this.currentPassenger.id] || 'স্টপ পার হয়ে গেছেন, একটু পিছিয়ে নামিয়ে দিন!';
+                window.ui.showSpeechBubble(reminderMsg, 2.5);
+                window.soundManager.playNotificationChime();
             }
 
+            const isOvershot = distToDest < 0;
             return {
                 status: 'in_progress',
                 passenger: this.currentPassenger,
                 destination: this.destination,
-                distRemaining: Math.max(0, Math.round(this.destination.targetZ - playerPos.z)),
+                distRemaining: Math.round(Math.abs(distToDest)),
+                isOvershot: isOvershot,
                 patiencePct: (this.tripPatience / this.maxPatience) * 100,
                 fare: this.fare
             };
         }
 
-        // Check if player drove past waiting passenger without picking them up - update target to next passenger!
+        // Check if player drove past waiting passenger
         if (!this.currentPassenger && this.waitingPassenger) {
-            if (playerPos.z > this.waitingPassenger.z + 12.0) {
+            const distBehind = playerPos.z - this.waitingPassenger.z;
+            if (distBehind > 85.0) {
+                // Driven far ahead (> 85m past) - only now cycle to the next passenger ahead
                 this.onMissedPickup(playerPos.z);
+            } else if (distBehind > 8.0 && !this.waitingPassenger.overshotWarned) {
+                // Gentle overshoot reminder once, keeping the passenger available for reversing back!
+                this.waitingPassenger.overshotWarned = true;
+                const msg = `${this.waitingPassenger.type.avatar} ও ভাই! একটু পেছনে আসুন, আমি দাঁড়িয়ে আছি!`;
+                window.ui.showSpeechBubble(msg, 2.5);
+                window.soundManager.playNotificationChime();
             }
         }
 
@@ -407,9 +431,11 @@ class PassengerManager {
         // When waiting for passenger, report distance and side for HUD navigation
         let waitingInfo = null;
         if (this.waitingPassenger) {
-            const dist = Math.round(this.waitingPassenger.z - playerPos.z);
+            const rawDist = this.waitingPassenger.z - playerPos.z;
+            const isBehind = rawDist < 0;
             waitingInfo = {
-                dist: Math.max(0, dist),
+                dist: Math.round(Math.abs(rawDist)),
+                isBehind: isBehind,
                 side: this.waitingPassenger.isRight ? 'Right' : 'Left',
                 type: this.waitingPassenger.type
             };
@@ -464,7 +490,8 @@ class PassengerManager {
             name: nextDestTemplate.name,
             targetZ: newTargetZ,
             x: 0,
-            radius: 5.5
+            radius: 7.5,
+            overshotWarned: false
         };
 
         // Move destination beacon marker
