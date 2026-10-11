@@ -416,10 +416,26 @@ class UIManager {
                 this.elPatienceBar.style.backgroundColor = '#00e676';
             }
 
+            const sideText = data.destination && data.destination.side ? ` on <strong>${data.destination.side} Side</strong>` : '';
             if (data.isOvershot) {
                 this.elObjective.innerHTML = `📍 <strong>${data.destination.name}</strong> • ${absDist}m <strong>BEHIND</strong> ⬅ Reverse to drop off!`;
             } else {
-                this.elObjective.innerHTML = `📍 <strong>${data.destination.name}</strong> • ${absDist}m away`;
+                this.elObjective.innerHTML = `📍 <strong>${data.destination.name}</strong> • ${absDist}m ahead${sideText}`;
+            }
+
+            if (absDist < 30) {
+                if (data.needsPullToSide) {
+                    const sideUpper = data.destination && data.destination.side ? data.destination.side.toUpperCase() : 'ROADSIDE';
+                    this.elPickupPrompt.innerText = `PULL OVER TO THE ${sideUpper} SIDE (< 18 km/h) TO DROP OFF!`;
+                    this.elPickupPrompt.style.background = 'linear-gradient(135deg, rgba(255, 152, 0, 0.95), rgba(230, 81, 0, 0.95))';
+                    this.elPickupPrompt.classList.remove('hidden');
+                } else {
+                    this.elPickupPrompt.innerText = 'SLOW DOWN (< 18 km/h) TO DROP OFF PASSENGER!';
+                    this.elPickupPrompt.style.background = 'linear-gradient(135deg, rgba(0, 230, 118, 0.95), rgba(0, 200, 83, 0.95))';
+                    this.elPickupPrompt.classList.remove('hidden');
+                }
+            } else if (!data.nearRepairShop && !data.nearFuelStation) {
+                this.elPickupPrompt.classList.add('hidden');
             }
         } else {
             this.cardPassenger.classList.add('hidden');

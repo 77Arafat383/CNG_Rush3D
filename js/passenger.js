@@ -163,6 +163,34 @@ class PassengerManager {
         dStarMesh.position.y = 5.2;
         this.destMarker.add(dStarMesh);
         this.destMarker.userData.star = dStarMesh;
+
+        // Floating 3D Text Billboard: [ 🚏 ড্রপ-অফ / PASSENGER DROP-OFF ]
+        const dCanvas = document.createElement('canvas');
+        dCanvas.width = 512;
+        dCanvas.height = 160;
+        const dctx = dCanvas.getContext('2d');
+        dctx.fillStyle = '#ffb300';
+        dctx.roundRect(10, 10, 492, 140, 24);
+        dctx.fill();
+        dctx.strokeStyle = '#ffffff';
+        dctx.lineWidth = 8;
+        dctx.roundRect(10, 10, 492, 140, 24);
+        dctx.stroke();
+
+        dctx.fillStyle = '#0b0f19';
+        dctx.font = 'bold 44px sans-serif';
+        dctx.textAlign = 'center';
+        dctx.fillText('🚏 PASSENGER DROP-OFF', 256, 68);
+        dctx.font = 'bold 36px sans-serif';
+        dctx.fillStyle = '#b71c1c';
+        dctx.fillText('রোডের পাশে নামিয়ে দিন', 256, 118);
+
+        const dBannerTex = new THREE.CanvasTexture(dCanvas);
+        const dBannerMesh = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 1.6), new THREE.MeshBasicMaterial({ map: dBannerTex, side: THREE.DoubleSide }));
+        dBannerMesh.position.y = 4.2;
+        this.destMarker.add(dBannerMesh);
+        this.destMarker.userData.banner = dBannerMesh;
+
         this.destMarker.visible = false;
         this.scene.add(this.destMarker);
     }
@@ -251,19 +279,25 @@ class PassengerManager {
         this.tripPotholeCount = 0;
         this.tripSlowTime = 0;
 
-        // Generate destination ahead
+        // Generate destination ahead on the side of the road (curb edge)
         const destTemplate = DESTINATIONS[Math.floor(Math.random() * DESTINATIONS.length)];
         const targetZ = this.player.position.z + destTemplate.dist;
+        const isRight = Math.random() < 0.6; // Right curb standard or left curb
+        const destX = isRight ? 5.8 : -5.8;
+
         this.destination = {
             name: destTemplate.name,
             targetZ: targetZ,
-            x: 0,
-            radius: 7.5,
-            overshotWarned: false
+            x: destX,
+            isRight: isRight,
+            side: isRight ? 'Right' : 'Left',
+            radius: 8.5,
+            overshotWarned: false,
+            wrongSideWarned: false
         };
 
-        // Position destination marker
-        this.destMarker.position.set(0, 0.2, targetZ);
+        // Position destination marker at the side of the road
+        this.destMarker.position.set(destX, 0.2, targetZ);
         this.destMarker.visible = true;
 
         // Initial dialogue
@@ -342,8 +376,13 @@ class PassengerManager {
             this.waitingPassenger.mesh.userData.rightArm.rotation.z = 0.35;
         }
 
-        if (this.destMarker.visible && this.destMarker.userData.star) {
-            this.destMarker.userData.star.rotation.y += 1.8 * dt;
+        if (this.destMarker.visible) {
+            if (this.destMarker.userData.star) {
+                this.destMarker.userData.star.rotation.y += 1.8 * dt;
+            }
+            if (this.destMarker.userData.banner) {
+                this.destMarker.userData.banner.rotation.y = Math.sin(Date.now() * 0.002) * 0.25;
+            }
         }
 
         // Active Trip Logic
@@ -374,11 +413,34 @@ class PassengerManager {
 
             // 5. Check Arrival at Destination or Missed Destination
             const distToDest = this.destination.targetZ - playerPos.z;
-            if (Math.abs(distToDest) <= this.destination.radius) {
+            const distZToDest = Math.abs(distToDest);
+            const euclideanDist = Math.hypot(playerPos.x - this.destination.x, playerPos.z - this.destination.targetZ);
+
+            // Is player near the destination longitudinally?
+            const inLongitudinalZone = distZToDest <= this.destination.radius;
+
+            // Side of road check:
+            // Road is ±7.5 wide. Side of road means car pulled over to the side (|x| >= 3.4) on the side where the destination is
+            const isPulledToSide = Math.abs(playerPos.x) >= 3.4 && ((this.destination.isRight && playerPos.x > 1.2) || (!this.destination.isRight && playerPos.x < -1.2));
+            const inDropZone = (inLongitudinalZone && isPulledToSide) || (euclideanDist <= 5.8);
+
+            if (inLongitudinalZone) {
                 if (playerSpeedKmh <= 18) {
-                    const result = this.completeTrip();
-                    return { status: 'completed', result: result };
+                    if (inDropZone) {
+                        const result = this.completeTrip();
+                        return { status: 'completed', result: result };
+                    } else {
+                        // Stopped in middle of road!
+                        if (!this.destination.wrongSideWarned) {
+                            this.destination.wrongSideWarned = true;
+                            const sideTextBn = this.destination.isRight ? 'ডানপাশে' : 'বামপাশে';
+                            window.ui.showSpeechBubble(`${this.currentPassenger.avatar} ভাই, রাস্তার মাঝখানে নামাবেন না! রোডের ${sideTextBn} সাইডে চাপান!`, 3.0);
+                            window.ui.showFloatingText(`⚠️ PULL OVER TO THE ${this.destination.side.toUpperCase()} SIDE TO DROP OFF!`, '#ff9800');
+                        }
+                    }
                 }
+            } else if (distToDest > 20) {
+                this.destination.wrongSideWarned = false;
             } else if (distToDest < -85.0) {
                 // Player passed far beyond destination (> 85m past, moving to next area)
                 this.onMissedDestination(playerPos.z);
@@ -403,6 +465,7 @@ class PassengerManager {
                 destination: this.destination,
                 distRemaining: Math.round(Math.abs(distToDest)),
                 isOvershot: isOvershot,
+                needsPullToSide: inLongitudinalZone && !isPulledToSide,
                 patiencePct: (this.tripPatience / this.maxPatience) * 100,
                 fare: this.fare
             };
@@ -482,20 +545,25 @@ class PassengerManager {
         const availableDest = DESTINATIONS.filter(d => d.name !== currentName);
         const nextDestTemplate = availableDest[Math.floor(Math.random() * availableDest.length)] || DESTINATIONS[0];
 
-        // Place next drop station ahead (260m - 340m ahead)
+        // Place next drop station ahead (260m - 340m ahead) on side of road
         const nextDist = 260 + Math.random() * 80;
         const newTargetZ = playerZ + nextDist;
+        const isRight = Math.random() < 0.6;
+        const destX = isRight ? 5.8 : -5.8;
 
         this.destination = {
             name: nextDestTemplate.name,
             targetZ: newTargetZ,
-            x: 0,
-            radius: 7.5,
-            overshotWarned: false
+            x: destX,
+            isRight: isRight,
+            side: isRight ? 'Right' : 'Left',
+            radius: 8.5,
+            overshotWarned: false,
+            wrongSideWarned: false
         };
 
-        // Move destination beacon marker
-        this.destMarker.position.set(0, 0.2, newTargetZ);
+        // Move destination beacon marker to side of road
+        this.destMarker.position.set(destX, 0.2, newTargetZ);
         this.destMarker.visible = true;
 
         window.ui.showFloatingText(`MISSED DROP! NEXT STOP: ${this.destination.name.split(' ')[0]} ❯❯`, '#ff9800');

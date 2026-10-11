@@ -184,7 +184,17 @@ class TrafficManager {
         return reactedCount;
     }
 
-    update(dt, playerZ) {
+    update(dt, playerPosOrZ, playerSpeed = 0, playerCollider = null) {
+        let playerZ = 0;
+        let playerPos = null;
+        if (typeof playerPosOrZ === 'number') {
+            playerZ = playerPosOrZ;
+            playerPos = { x: 0, y: 0, z: playerZ };
+        } else if (playerPosOrZ && typeof playerPosOrZ.z === 'number') {
+            playerZ = playerPosOrZ.z;
+            playerPos = playerPosOrZ;
+        }
+
         this.spawnTimer += dt;
         if (this.spawnTimer >= this.spawnInterval) {
             this.spawnTimer = 0;
@@ -204,8 +214,9 @@ class TrafficManager {
                 continue;
             }
 
-            // AI Navigation: Check for vehicles ahead in the same lane
+            // 1. AI Navigation: Check for other vehicles ahead in the same lane
             let vehicleAheadDist = 999;
+            let vehicleAheadSpeed = 999;
             for (let j = 0; j < this.vehicles.length; j++) {
                 if (i === j) continue;
                 const other = this.vehicles[j];
@@ -214,17 +225,71 @@ class TrafficManager {
                     const d = other.z - v.z;
                     if (d < vehicleAheadDist) {
                         vehicleAheadDist = d;
+                        vehicleAheadSpeed = other.speed;
                     }
                 }
             }
 
-            // Slow down if tailgating
-            if (vehicleAheadDist < 14) {
-                v.speed = Math.max(2.0, v.speed - 8.0 * dt);
-            } else if (v.hornReactionTimer <= 0) {
-                // Return to base speed
-                if (v.speed < v.baseSpeed) {
-                    v.speed = Math.min(v.baseSpeed, v.speed + 3.0 * dt);
+            // 2. Check if player vehicle is ahead in the same lane (this vehicle is behind the player)
+            let playerAheadInLane = false;
+            let distToPlayer = 999;
+            if (playerPos) {
+                // If traffic vehicle is behind player (v.z <= playerPos.z)
+                const isBehindPlayer = (v.z <= playerPos.z + 0.5);
+                const lateralDist = Math.abs(v.x - playerPos.x);
+                // If sharing the same lane corridor (lateral distance < 2.4)
+                if (isBehindPlayer && lateralDist < 2.4) {
+                    playerAheadInLane = true;
+                    distToPlayer = Math.max(0, playerPos.z - v.z);
+                }
+            }
+
+            // 3. Speed regulation: Vehicles behind player must NEVER hit player from behind,
+            // and must stop until player moves if stopped!
+            if (playerAheadInLane) {
+                const playerIsStopped = (Math.abs(playerSpeed) <= 1.2);
+                const safeStopGap = (v.length / 2) + 2.0;
+
+                if (playerIsStopped) {
+                    // Player car is stopped: traffic behind stops completely until player moves
+                    if (distToPlayer <= 22) {
+                        v.speed = Math.max(0, v.speed - 16.0 * dt);
+                    }
+                    if (distToPlayer <= safeStopGap + 1.5) {
+                        v.speed = 0;
+                        if (v.z > playerPos.z - safeStopGap) {
+                            v.z = playerPos.z - safeStopGap;
+                        }
+                    }
+                } else {
+                    // Player is moving: match pace safely behind player, never rear-ending
+                    const targetSpeed = Math.max(0, Math.min(v.baseSpeed, playerSpeed - 0.5));
+                    if (distToPlayer <= 16) {
+                        if (v.speed > targetSpeed) {
+                            v.speed = Math.max(0, v.speed - 14.0 * dt);
+                        } else {
+                            v.speed = Math.min(targetSpeed, v.speed + 3.0 * dt);
+                        }
+                    }
+                    if (distToPlayer <= safeStopGap + 0.8) {
+                        v.speed = Math.min(v.speed, Math.max(0, playerSpeed));
+                        if (v.z > playerPos.z - safeStopGap) {
+                            v.z = playerPos.z - safeStopGap;
+                        }
+                    }
+                }
+            } else {
+                // Standard traffic following
+                if (vehicleAheadDist < 8.0) {
+                    v.speed = Math.min(v.speed, Math.max(0, vehicleAheadSpeed));
+                    if (v.speed > 0) v.speed = Math.max(0, v.speed - 14.0 * dt);
+                } else if (vehicleAheadDist < 16) {
+                    v.speed = Math.max(0, v.speed - 8.0 * dt);
+                } else if (v.hornReactionTimer <= 0) {
+                    // Return to base speed
+                    if (v.speed < v.baseSpeed) {
+                        v.speed = Math.min(v.baseSpeed, v.speed + 3.0 * dt);
+                    }
                 }
             }
 
@@ -240,9 +305,9 @@ class TrafficManager {
                 v.x = v.targetLaneX;
             }
 
-            // Occasional natural lane changes for cars and CNGs
+            // Occasional natural lane changes for cars and CNGs if blocked ahead
             v.laneChangeTimer -= dt;
-            if (v.laneChangeTimer <= 0 && v.type !== 'rickshaw' && vehicleAheadDist < 25) {
+            if (v.laneChangeTimer <= 0 && v.type !== 'rickshaw' && (vehicleAheadDist < 25 || (playerAheadInLane && distToPlayer < 20))) {
                 v.laneChangeTimer = 6 + Math.random() * 10;
                 // Switch to adjacent lane if clear
                 const possibleLanes = [v.laneIndex - 1, v.laneIndex + 1].filter(idx => idx >= 0 && idx < this.lanes.length);
@@ -271,13 +336,30 @@ class TrafficManager {
         }
     }
 
-    checkCollisions(playerCollider, playerSpeed) {
+    checkCollisions(playerCollider, playerSpeed, playerPos = null) {
         for (let i = 0; i < this.vehicles.length; i++) {
             const v = this.vehicles[i];
             if (!v.active) continue;
 
             if (playerCollider.intersectsBox(v.collider)) {
-                // Collision detected! Calculate severity based on relative speed and mass
+                // Rule: No car should hit from behind. If other vehicle is in backside, halt them without collision!
+                const pZ = (playerPos && typeof playerPos.z === 'number') ? playerPos.z : null;
+                const isBehindPlayer = pZ !== null ? (v.z <= pZ + 0.2) : false;
+
+                if (isBehindPlayer) {
+                    // Vehicle is behind player: stop it dead in its tracks, zero damage, zero penalty!
+                    v.speed = 0;
+                    const safeStopGap = (v.length / 2) + 1.8;
+                    v.z = pZ - safeStopGap;
+                    v.mesh.position.z = v.z;
+                    v.collider.setFromCenterAndSize(
+                        new THREE.Vector3(v.x, 1.0, v.z),
+                        new THREE.Vector3(v.width, 2.0, v.length)
+                    );
+                    continue; // Skip collision, do not hit player!
+                }
+
+                // Player crashing into front/side of another vehicle ahead
                 let severity = 'medium';
                 let penalty = 10;
                 let damage = 12;

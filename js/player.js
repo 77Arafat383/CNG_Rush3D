@@ -15,11 +15,11 @@ class PlayerCNG {
 
         // Arcade vehicle dynamics
         this.speed = 0;              // Current forward speed (units/s)
-        this.maxSpeed = 30;          // ~108 km/h (Medium faster top speed)
-        this.maxReverseSpeed = -8;   // ~28 km/h
-        this.accel = 25;             // Responsive, punchy acceleration
-        this.brakeForce = 32;        // Balanced braking deceleration
-        this.friction = 4.2;         // Smooth coasting deceleration
+        this.maxSpeed = 16.5;        // ~60 km/h (Normal realistic Dhaka CNG cruising top speed)
+        this.maxReverseSpeed = -5.0; // ~18 km/h
+        this.accel = 5.2;            // Smooth, gradual acceleration
+        this.brakeForce = 18.0;      // Natural, balanced braking deceleration
+        this.friction = 3.0;         // Smooth coasting deceleration
         this.steerAngle = 0;         // Wheel steer angle
         this.maxSteerAngle = 0.55;   // ~31 degrees
         this.steerSpeed = 3.2;       // Steering responsiveness
@@ -230,7 +230,14 @@ class PlayerCNG {
             if (this.speed < 0) {
                 this.speed += effectiveBrake * dt;
             } else {
-                this.speed = Math.min(effectiveMaxSpeed, this.speed + effectiveAccel * dt);
+                // Progressive acceleration curve: starts smoothly from standstill and builds speed gradually
+                const speedRatio = Math.max(0, Math.min(1.0, this.speed / effectiveMaxSpeed));
+                // Smooth initial roll-off from idle (prevents sudden instant jerking)
+                const startRamp = 0.55 + 0.45 * Math.min(1.0, this.speed / 3.0);
+                // Natural power taper towards top cruising speed
+                const topCurve = Math.max(0.35, 1.0 - Math.pow(speedRatio, 1.4) * 0.65);
+                const currentAccel = effectiveAccel * startRamp * topCurve;
+                this.speed = Math.min(effectiveMaxSpeed, this.speed + currentAccel * dt);
             }
         } else if (this.inputs.backward && canDrive) {
             if (this.speed > 0) {

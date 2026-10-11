@@ -430,8 +430,8 @@ class GameEngine {
         }
 
         // 6. Update Traffic & Check Vehicle Collisions
-        this.traffic.update(dt, this.player.position.z);
-        const trafficHit = this.traffic.checkCollisions(this.player.collider, this.player.speed);
+        this.traffic.update(dt, this.player.position, this.player.speed, this.player.collider);
+        const trafficHit = this.traffic.checkCollisions(this.player.collider, this.player.speed, this.player.position);
         if (trafficHit) {
             window.soundManager.playCrash(trafficHit.severity);
             this.chaseCamera.shake(trafficHit.severity === 'heavy' ? 0.6 : 0.35);
@@ -525,6 +525,7 @@ class GameEngine {
             destination: tripUpdate.destination,
             distRemaining: tripUpdate.distRemaining,
             isOvershot: tripUpdate.isOvershot,
+            needsPullToSide: tripUpdate.needsPullToSide,
             patiencePct: tripUpdate.patiencePct,
             fare: tripUpdate.fare
         });
