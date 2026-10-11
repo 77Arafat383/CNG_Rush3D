@@ -16,6 +16,8 @@
     padding: 0;
     box-sizing: border-box;
     user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 html,
@@ -23,6 +25,7 @@ body {
     width: 100%;
     height: 100%;
     overflow: hidden;
+    overscroll-behavior: none;
     background-color: #0b0f19;
     font-family: var(--font-main);
     color: #ffffff;
@@ -666,4 +669,689 @@ body {
 
 .hidden {
     display: none !important;
+}
+
+/* ================= VIRTUAL TOUCH CONTROLS ================= */
+.touch-controls {
+    position: absolute;
+    bottom: 16px;
+    left: 0;
+    width: 100%;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    pointer-events: none;
+    z-index: 30;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.touch-controls.touch-hidden {
+    display: none !important;
+}
+
+.touch-cluster {
+    display: flex;
+    gap: 12px;
+    pointer-events: auto;
+}
+
+.touch-cluster-left {
+    align-items: center;
+}
+
+.touch-cluster-right {
+    align-items: center;
+    gap: 10px;
+}
+
+.touch-btn {
+    background: rgba(15, 23, 42, 0.78);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(255, 255, 255, 0.16);
+    border-radius: 18px;
+    color: #ffffff;
+    width: 66px;
+    height: 66px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    transition: transform 0.08s ease, background-color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.touch-icon {
+    font-size: 22px;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.touch-text {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    color: #94a3b8;
+}
+
+/* Steer Buttons */
+.touch-btn-steer {
+    border-color: rgba(0, 229, 255, 0.35);
+}
+
+.touch-btn-steer.touch-active {
+    background: rgba(0, 229, 255, 0.35);
+    border-color: var(--cng-cyan);
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.6);
+    transform: scale(0.92);
+}
+
+.touch-btn-steer.touch-active .touch-text {
+    color: #ffffff;
+}
+
+/* Drive Button */
+.touch-btn-drive {
+    background: rgba(0, 230, 118, 0.22);
+    border-color: rgba(0, 230, 118, 0.45);
+    width: 72px;
+    height: 72px;
+}
+
+.touch-btn-drive .touch-icon {
+    color: var(--cng-green);
+    font-size: 24px;
+}
+
+.touch-btn-drive .touch-text {
+    color: var(--cng-green);
+}
+
+.touch-btn-drive.touch-active {
+    background: rgba(0, 230, 118, 0.5);
+    border-color: var(--cng-green);
+    box-shadow: 0 0 24px rgba(0, 230, 118, 0.7);
+    transform: scale(0.92);
+}
+
+/* Brake Button */
+.touch-btn-brake {
+    background: rgba(255, 82, 82, 0.2);
+    border-color: rgba(255, 82, 82, 0.4);
+}
+
+.touch-btn-brake .touch-icon {
+    color: var(--cng-red);
+}
+
+.touch-btn-brake .touch-text {
+    color: var(--cng-red);
+}
+
+.touch-btn-brake.touch-active {
+    background: rgba(255, 82, 82, 0.45);
+    border-color: var(--cng-red);
+    box-shadow: 0 0 20px rgba(255, 82, 82, 0.65);
+    transform: scale(0.92);
+}
+
+/* Horn Button */
+.touch-btn-horn {
+    background: rgba(255, 193, 7, 0.18);
+    border-color: rgba(255, 193, 7, 0.38);
+    width: 58px;
+    height: 58px;
+}
+
+.touch-btn-horn .touch-icon {
+    font-size: 20px;
+}
+
+.touch-btn-horn .touch-text {
+    color: var(--cng-amber);
+}
+
+.touch-btn-horn.touch-active {
+    background: rgba(255, 193, 7, 0.45);
+    border-color: var(--cng-amber);
+    box-shadow: 0 0 20px rgba(255, 193, 7, 0.65);
+    transform: scale(0.92);
+}
+
+/* Desktop without touch hides touch controls by default unless toggled */
+@media (hover: hover) and (pointer: fine) and (min-width: 1025px) {
+    .touch-controls {
+        display: none;
+    }
+
+    .touch-controls:not(.touch-hidden) {
+        display: none;
+    }
+}
+
+/* ================= TABLET RESPONSIVE (max-width: 1024px) ================= */
+@media (max-width: 1024px) {
+    #hud {
+        padding: 14px 16px;
+    }
+
+    .hud-panel {
+        padding: 10px 14px;
+        border-radius: 12px;
+    }
+
+    .hud-money-badge {
+        font-size: 22px;
+    }
+
+    .hud-meters {
+        min-width: 140px;
+    }
+
+    .hud-speedometer {
+        font-size: 20px;
+        min-width: 70px;
+    }
+
+    .hud-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 16px;
+    }
+
+    .hud-objective {
+        font-size: 13px;
+        padding: 8px 16px;
+    }
+
+    .hud-bottom-bar {
+        position: absolute;
+        bottom: 96px;
+        left: 0;
+        width: 100%;
+        padding: 0 16px;
+        pointer-events: none;
+        justify-content: center;
+    }
+
+    .passenger-card {
+        min-width: 0;
+        max-width: 440px;
+        width: 100%;
+        padding: 10px 16px;
+        pointer-events: auto;
+    }
+
+    .touch-controls {
+        bottom: 14px;
+        padding: 0 16px;
+    }
+
+    .modal-card {
+        max-width: 540px;
+        padding: 28px 24px;
+    }
+
+    .start-title {
+        font-size: 42px;
+    }
+}
+
+/* ================= MOBILE RESPONSIVE (max-width: 768px) ================= */
+@media (max-width: 768px) {
+    #hud {
+        padding: 8px 10px;
+    }
+
+    .hud-top-bar {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "left right"
+            "center center";
+        gap: 6px;
+        width: 100%;
+    }
+
+    .hud-left {
+        grid-area: left;
+        padding: 6px 10px;
+        gap: 3px;
+        border-radius: 10px;
+    }
+
+    .hud-money-badge {
+        font-size: 18px;
+    }
+
+    .hud-score-badge {
+        font-size: 11px;
+    }
+
+    .hud-level-badge {
+        font-size: 10px;
+        padding: 2px 8px;
+        margin-top: 0;
+    }
+
+    .hud-right {
+        grid-area: right;
+        padding: 6px 10px;
+        gap: 6px;
+        border-radius: 10px;
+    }
+
+    .hud-meters {
+        min-width: 95px;
+        gap: 4px;
+    }
+
+    .hud-timer-badge {
+        font-size: 13px;
+        margin-bottom: 0;
+    }
+
+    .meter-group {
+        font-size: 10px;
+        gap: 4px;
+    }
+
+    .meter-label {
+        width: 38px;
+    }
+
+    .meter-track {
+        height: 6px;
+    }
+
+    .hud-speedometer {
+        font-size: 16px;
+        min-width: 55px;
+    }
+
+    .hud-btn {
+        width: 34px;
+        height: 34px;
+        font-size: 14px;
+    }
+
+    .hud-center {
+        grid-area: center;
+        width: 100%;
+        gap: 4px;
+    }
+
+    .hud-objective {
+        font-size: 11px;
+        padding: 5px 12px;
+        border-radius: 20px;
+        max-width: 95vw;
+        text-align: center;
+        line-height: 1.3;
+    }
+
+    .hud-pickup-prompt {
+        font-size: 11px;
+        padding: 4px 12px;
+    }
+
+    .hud-alert-banner {
+        font-size: 11px;
+        padding: 4px 12px;
+    }
+
+    /* Bottom Passenger Card */
+    .hud-bottom-bar {
+        position: absolute;
+        bottom: 84px;
+        left: 0;
+        width: 100%;
+        padding: 0 10px;
+        pointer-events: none;
+        justify-content: center;
+    }
+
+    .passenger-card {
+        max-width: 96vw;
+        width: 100%;
+        padding: 8px 12px;
+        gap: 10px;
+        border-radius: 14px;
+        pointer-events: auto;
+    }
+
+    .card-avatar {
+        font-size: 24px;
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+    }
+
+    .card-name {
+        font-size: 13px;
+    }
+
+    .card-fare {
+        font-size: 14px;
+    }
+
+    .card-patience-track {
+        height: 6px;
+    }
+
+    .card-note {
+        font-size: 10px;
+    }
+
+    /* Virtual Touch Buttons on Mobile */
+    .touch-controls {
+        bottom: 8px;
+        padding: 0 10px;
+    }
+
+    .touch-cluster {
+        gap: 8px;
+    }
+
+    .touch-btn {
+        width: 58px;
+        height: 58px;
+        border-radius: 15px;
+    }
+
+    .touch-btn-drive {
+        width: 62px;
+        height: 62px;
+    }
+
+    .touch-btn-brake {
+        width: 58px;
+        height: 58px;
+    }
+
+    .touch-btn-horn {
+        width: 52px;
+        height: 52px;
+    }
+
+    .touch-icon {
+        font-size: 18px;
+    }
+
+    .touch-text {
+        font-size: 9px;
+    }
+
+    /* Floating Feedback & Speech */
+    .floating-feedback {
+        font-size: 17px;
+        padding: 6px 14px;
+    }
+
+    #speech-bubble {
+        bottom: 148px;
+        max-width: 86vw;
+        font-size: 13px;
+        padding: 8px 16px;
+        text-align: center;
+    }
+
+    /* Modals & Dialogs on Mobile */
+    .modal-overlay {
+        padding: 10px;
+    }
+
+    .modal-card {
+        padding: 22px 18px;
+        border-radius: 20px;
+        width: 95vw;
+        max-width: 95vw;
+        max-height: 92vh;
+        overflow-y: auto;
+    }
+
+    .start-title {
+        font-size: 34px;
+    }
+
+    .start-subtitle {
+        font-size: 13px;
+        margin-bottom: 16px;
+    }
+
+    .title-tagline {
+        font-size: 11px;
+        letter-spacing: 2px;
+    }
+
+    .start-stats-preview {
+        gap: 14px;
+        padding: 10px 14px;
+        margin-bottom: 20px;
+    }
+
+    .stat-val {
+        font-size: 17px;
+    }
+
+    .button-stack {
+        gap: 10px;
+    }
+
+    .btn-primary {
+        padding: 14px 20px;
+        font-size: 16px;
+        border-radius: 12px;
+    }
+
+    .btn-secondary {
+        padding: 11px 16px;
+        font-size: 13px;
+        border-radius: 10px;
+    }
+
+    .howto-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        max-height: 48vh;
+        margin: 14px 0;
+    }
+
+    .howto-box {
+        padding: 11px;
+    }
+
+    .summary-table {
+        font-size: 13px;
+        margin: 14px 0;
+    }
+
+    .summary-table td {
+        padding: 6px 8px;
+    }
+}
+
+/* ================= SMALL MOBILE (max-width: 420px) ================= */
+@media (max-width: 420px) {
+    .start-title {
+        font-size: 28px;
+    }
+
+    .hud-money-badge {
+        font-size: 16px;
+    }
+
+    .hud-speedometer {
+        font-size: 14px;
+        min-width: 45px;
+    }
+
+    .hud-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+
+    .touch-btn {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+    }
+
+    .touch-btn-drive {
+        width: 54px;
+        height: 54px;
+    }
+
+    .touch-btn-brake {
+        width: 50px;
+        height: 50px;
+    }
+
+    .touch-btn-horn {
+        width: 46px;
+        height: 46px;
+    }
+
+    .touch-icon {
+        font-size: 16px;
+    }
+
+    .touch-text {
+        font-size: 8px;
+    }
+}
+
+/* ================= LANDSCAPE MOBILE (max-height: 520px) ================= */
+@media (max-height: 520px) and (orientation: landscape) {
+    #hud {
+        padding: 6px 12px;
+    }
+
+    .hud-top-bar {
+        display: flex;
+        grid-template-columns: none;
+        grid-template-areas: none;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .hud-panel {
+        padding: 4px 10px;
+    }
+
+    .hud-center {
+        margin-top: 0;
+    }
+
+    .hud-objective {
+        font-size: 10px;
+        padding: 4px 10px;
+    }
+
+    .hud-bottom-bar {
+        position: absolute;
+        bottom: 8px;
+        left: 0;
+        right: 0;
+        margin: 0 auto;
+        max-width: 320px;
+        padding: 0;
+        pointer-events: none;
+    }
+
+    .passenger-card {
+        padding: 6px 10px;
+        gap: 8px;
+        max-width: 310px;
+    }
+
+    .card-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 18px;
+    }
+
+    .card-name,
+    .card-fare {
+        font-size: 12px;
+    }
+
+    .card-note {
+        display: none;
+    }
+
+    .touch-controls {
+        bottom: 6px;
+        padding: 0 12px;
+    }
+
+    .touch-btn {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+    }
+
+    .touch-btn-drive {
+        width: 54px;
+        height: 54px;
+    }
+
+    .touch-btn-brake {
+        width: 50px;
+        height: 50px;
+    }
+
+    .touch-btn-horn {
+        width: 44px;
+        height: 44px;
+    }
+
+    .modal-card {
+        max-height: 94vh;
+        padding: 14px 18px;
+        overflow-y: auto;
+    }
+
+    .start-title {
+        font-size: 26px;
+    }
+
+    .start-subtitle {
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .start-stats-preview {
+        margin-bottom: 12px;
+        padding: 6px 12px;
+    }
+
+    .howto-grid {
+        max-height: 40vh;
+        grid-template-columns: 1fr 1fr;
+        font-size: 11px;
+        margin: 10px 0;
+    }
+
+    .button-stack {
+        gap: 8px;
+    }
+
+    .btn-primary {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+
+    .btn-secondary {
+        padding: 8px 14px;
+        font-size: 12px;
+    }
 }

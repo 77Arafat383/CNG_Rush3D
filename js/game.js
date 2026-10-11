@@ -84,11 +84,16 @@ class GameEngine {
     }
 
     setupResize() {
-        window.addEventListener('resize', () => {
+        const handleResize = () => {
             if (!this.camera || !this.renderer) return;
             this.camera.aspect = window.innerWidth / window.innerHeight;
             this.camera.updateProjectionMatrix();
             this.renderer.setSize(window.innerWidth, window.innerHeight);
+        };
+
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(handleResize, 150);
         });
     }
 

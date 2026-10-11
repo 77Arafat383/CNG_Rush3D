@@ -43,6 +43,10 @@ class UIManager {
 
         // Audio toggle
         this.btnAudioToggle = document.getElementById('btn-audio-toggle');
+
+        // Touch controls
+        this.touchControls = document.getElementById('touch-controls');
+        this.btnTouchToggle = document.getElementById('btn-touch-toggle');
     }
 
     setupEventListeners() {
@@ -137,6 +141,9 @@ class UIManager {
             this.btnAudioToggle.innerText = isMuted ? '🔇' : '🔊';
         });
 
+        // Virtual Touch Controls setup
+        this.setupTouchControls();
+
         // Keyboard shortcuts (Pause, Restart, Camera View Toggle)
         window.addEventListener('keydown', (e) => {
             if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
@@ -156,6 +163,63 @@ class UIManager {
                 window.game.restartGame();
             }
         });
+    }
+
+    setupTouchControls() {
+        const bindButton = (id, inputKey) => {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+
+            const handleDown = (e) => {
+                if (e.cancelable) e.preventDefault();
+                if (window.game && window.game.player) {
+                    window.game.player.inputs[inputKey] = true;
+                }
+                btn.classList.add('touch-active');
+            };
+
+            const handleUp = (e) => {
+                if (e.cancelable) e.preventDefault();
+                if (window.game && window.game.player) {
+                    window.game.player.inputs[inputKey] = false;
+                    if (inputKey === 'horn') {
+                        window.game.player.hornActive = false;
+                    }
+                }
+                btn.classList.remove('touch-active');
+            };
+
+            // Pointer events for modern multi-touch & mouse testing
+            btn.addEventListener('pointerdown', handleDown, { passive: false });
+            btn.addEventListener('pointerup', handleUp, { passive: false });
+            btn.addEventListener('pointercancel', handleUp, { passive: false });
+            btn.addEventListener('pointerleave', handleUp, { passive: false });
+
+            // Touch events fallback for mobile browsers
+            btn.addEventListener('touchstart', handleDown, { passive: false });
+            btn.addEventListener('touchend', handleUp, { passive: false });
+            btn.addEventListener('touchcancel', handleUp, { passive: false });
+
+            // Prevent context menus on mobile long-press
+            btn.addEventListener('contextmenu', (e) => e.preventDefault());
+        };
+
+        bindButton('touch-steer-left', 'left');
+        bindButton('touch-steer-right', 'right');
+        bindButton('touch-drive', 'forward');
+        bindButton('touch-brake', 'backward');
+        bindButton('touch-horn', 'horn');
+
+        // Toggle button on HUD
+        if (this.btnTouchToggle) {
+            this.btnTouchToggle.addEventListener('click', () => {
+                window.soundManager.playClick();
+                if (this.touchControls) {
+                    const isHidden = this.touchControls.classList.toggle('touch-hidden');
+                    this.showFloatingText(isHidden ? 'TOUCH CONTROLS HIDDEN' : 'TOUCH CONTROLS ACTIVE', '#00e5ff');
+                }
+            });
+        }
     }
 
     showStartScreen() {
