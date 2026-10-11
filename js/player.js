@@ -48,6 +48,7 @@ class PlayerCNG {
         // Horn tracking
         this.hornCooldown = 0;
         this.hornActive = false;
+        this.buildingHitCooldown = 0;
 
         // Smoke particles when damaged
         this.initSmokeParticles();
@@ -148,6 +149,7 @@ class PlayerCNG {
         this.massModifier = 1.0;
         this.tractionModifier = 1.0;
         this.inWater = false;
+        this.buildingHitCooldown = 0;
         this.smokeParticles.forEach(p => p.visible = false);
     }
 
@@ -281,12 +283,30 @@ class PlayerCNG {
             this.speed *= (1.0 - 0.12 * dt); // Rough curb & sidewalk friction
         }
 
-        if (this.position.x < -10.8) {
-            this.position.x = -10.8;
-            this.speed *= 0.5; // Outer shop wall barrier
-        } else if (this.position.x > 10.8) {
-            this.position.x = 10.8;
-            this.speed *= 0.5;
+        if (this.buildingHitCooldown > 0) {
+            this.buildingHitCooldown -= dt;
+        }
+
+        let hitRoadsideBuilding = false;
+        if (this.position.x < -10.4) {
+            this.position.x = -10.4;
+            hitRoadsideBuilding = true;
+        } else if (this.position.x > 10.4) {
+            this.position.x = 10.4;
+            hitRoadsideBuilding = true;
+        }
+
+        let buildingDmg = 0;
+        if (hitRoadsideBuilding && this.buildingHitCooldown <= 0) {
+            this.buildingHitCooldown = 0.8;
+            const impactKmh = Math.round(Math.abs(this.speed) * 3.6);
+            // Rebound bounce back off the building wall
+            this.speed = -3.5;
+            // Damage scales from 15% to 25% based on speed
+            buildingDmg = Math.min(25, Math.max(15, Math.round(impactKmh * 0.4)));
+            this.takeDamage(buildingDmg);
+        } else if (hitRoadsideBuilding) {
+            this.speed *= (1.0 - 0.4 * dt);
         }
 
         // 5. Visual Roll & Pitch (leans into turns, pitches on brake/gas)
@@ -342,7 +362,8 @@ class PlayerCNG {
             lowFuelWarning: triggeredFuelWarning,
             justRanOutOfFuel: triggeredOutOfFuel,
             outOfFuel: this.outOfFuel,
-            isBroken: isBroken
+            isBroken: isBroken,
+            buildingHitDamage: buildingDmg
         };
     }
 }

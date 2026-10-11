@@ -260,12 +260,15 @@ class GameEngine {
             const isMedianBlock = obstacleHit.obstacle.type === 'median_block';
             const isLaneBlocker = obstacleHit.obstacle.type === 'lane_blocker';
             const isGatePillar = obstacleHit.obstacle.type === 'gate_pillar';
+            const isBuilding = obstacleHit.obstacle.type === 'roadside_building';
 
-            window.soundManager.playCrash(isGatePillar || isMedianBlock ? 'heavy' : (isLaneBlocker ? 'medium' : 'heavy'));
-            this.chaseCamera.shake(isLaneBlocker ? 0.42 : 0.55);
+            window.soundManager.playCrash(isGatePillar || isMedianBlock || isBuilding ? 'heavy' : (isLaneBlocker ? 'medium' : 'heavy'));
+            this.chaseCamera.shake(isBuilding ? 0.6 : (isLaneBlocker ? 0.42 : 0.55));
 
             if (isMedianBlock) {
                 this.player.speed *= 0.35; // Friction jolt against median concrete barrier
+            } else if (isBuilding) {
+                this.player.speed = -4.5; // Strong bounce off solid concrete/brick building
             } else {
                 this.player.speed = -4.0; // Rebound bounce
             }
@@ -274,8 +277,36 @@ class GameEngine {
             window.scoring.applyCollisionPenalty(obstacleHit.penalty);
             this.passengers.onCollision('heavy', obstacleHit.penalty);
 
-            const label = isMedianBlock ? 'HIT MEDIAN DIVIDER BLOCK!' : (isGatePillar ? 'HIT GATE PILLAR!' : (isLaneBlocker ? 'HIT LANE BLOCKER!' : 'HIT OBSTACLE!'));
+            if (isBuilding) {
+                const buildingShouts = [
+                    '🏢 ওরে ভাই! দোকানের দেয়ালে মেরে দিলেন?!',
+                    '🏢 আরে সিএনজি ভাই! দেয়াল ভেঙে ভেতরে ঢুকবেন নাকি?!',
+                    '🏢 দেখে চালান! দোকানপাটের ক্ষতি করবেন না!'
+                ];
+                const shout = buildingShouts[Math.floor(Math.random() * buildingShouts.length)];
+                window.ui.showSpeechBubble(shout, 2.8);
+            }
+
+            const label = isBuilding ? 'CRASHED INTO ROADSIDE BUILDING!' : (isMedianBlock ? 'HIT MEDIAN DIVIDER BLOCK!' : (isGatePillar ? 'HIT GATE PILLAR!' : (isLaneBlocker ? 'HIT LANE BLOCKER!' : 'HIT OBSTACLE!')));
             window.ui.showFloatingText(`💥 ${label} -${obstacleHit.damage}% HP (-৳${obstacleHit.penalty})`, '#ff1744');
+        }
+
+        // Roadside property boundary / building wall collision check
+        if (playerStatus.buildingHitDamage > 0) {
+            window.soundManager.playCrash('heavy');
+            this.chaseCamera.shake(0.55);
+            const penalty = 25;
+            window.scoring.applyCollisionPenalty(penalty);
+            this.passengers.onCollision('heavy', penalty);
+
+            const buildingShouts = [
+                '🏢 ওরে ভাই! দোকানের দেয়ালে মেরে দিলেন?!',
+                '🏢 আরে সিএনজি ভাই! দেয়াল ভেঙে ভেতরে ঢুকবেন নাকি?!',
+                '🏢 দেখে চালান! দোকানপাটের ক্ষতি করবেন না!'
+            ];
+            const shout = buildingShouts[Math.floor(Math.random() * buildingShouts.length)];
+            window.ui.showSpeechBubble(shout, 2.8);
+            window.ui.showFloatingText(`💥 CRASHED INTO ROADSIDE BUILDING! -${playerStatus.buildingHitDamage}% HP (-৳${penalty})`, '#ff1744');
         }
 
         // Sidewalk / Roadside Pedestrians collision check (people outside the road)

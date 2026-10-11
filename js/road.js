@@ -303,13 +303,37 @@ class RoadManager {
             // Left side
             if (Math.random() < 0.6) {
                 const shop = ModelFactory.createShopBuilding();
-                shop.position.set(- (this.roadWidth / 2 + this.sidewalkWidth + 2.5), 0, zOffset);
+                const shopX = - (this.roadWidth / 2 + this.sidewalkWidth + 2.5);
+                shop.position.set(shopX, 0, zOffset);
                 seg.add(shop);
+
+                seg.userData.obstacles.push({
+                    mesh: shop,
+                    x: shopX + 2.0,
+                    z: seg.position.z + zOffset,
+                    width: 5.0,
+                    length: 5.0,
+                    damage: 22,
+                    penalty: 30,
+                    type: 'roadside_building'
+                });
             } else if (Math.random() < 0.5) {
                 const teaStall = ModelFactory.createTeaStall();
-                teaStall.position.set(- (this.roadWidth / 2 + 2.0), 0, zOffset);
+                const stallX = - (this.roadWidth / 2 + 2.0);
+                teaStall.position.set(stallX, 0, zOffset);
                 teaStall.rotation.y = Math.PI / 2;
                 seg.add(teaStall);
+
+                seg.userData.obstacles.push({
+                    mesh: teaStall,
+                    x: stallX,
+                    z: seg.position.z + zOffset,
+                    width: 2.6,
+                    length: 2.4,
+                    damage: 18,
+                    penalty: 20,
+                    type: 'roadside_building'
+                });
             } else {
                 const tree = ModelFactory.createTree();
                 tree.position.set(- (this.roadWidth / 2 + 2.2), 0, zOffset);
@@ -320,9 +344,21 @@ class RoadManager {
             if (type !== 'fuel_station') {
                 if (Math.random() < 0.5) {
                     const shop = ModelFactory.createShopBuilding();
-                    shop.position.set(this.roadWidth / 2 + this.sidewalkWidth + 2.5, 0, zOffset);
+                    const shopX = this.roadWidth / 2 + this.sidewalkWidth + 2.5;
+                    shop.position.set(shopX, 0, zOffset);
                     shop.rotation.y = Math.PI;
                     seg.add(shop);
+
+                    seg.userData.obstacles.push({
+                        mesh: shop,
+                        x: shopX - 2.0,
+                        z: seg.position.z + zOffset,
+                        width: 5.0,
+                        length: 5.0,
+                        damage: 22,
+                        penalty: 30,
+                        type: 'roadside_building'
+                    });
                 } else {
                     const tree = ModelFactory.createTree();
                     tree.position.set(this.roadWidth / 2 + 2.2, 0, zOffset);
@@ -622,9 +658,9 @@ class RoadManager {
         for (let i = 0; i < this.obstacles.length; i++) {
             const obs = this.obstacles[i];
 
-            // For continuous obstacles like the median divider block, allow re-hit after short cooldown
-            if (obs.type === 'median_block') {
-                if (obs.lastHitTime && (now - obs.lastHitTime < 900)) continue;
+            // For continuous obstacles like the median divider block or roadside buildings, allow re-hit after short cooldown
+            if (obs.type === 'median_block' || obs.type === 'roadside_building') {
+                if (obs.lastHitTime && (now - obs.lastHitTime < 850)) continue;
             } else if (obs.hit) {
                 continue;
             }
@@ -638,11 +674,11 @@ class RoadManager {
             const isColliderHit = (playerCollider && obs.collider && playerCollider.intersectsBox(obs.collider));
 
             if (isBoxHit || isColliderHit) {
-                if (obs.type === 'median_block') {
+                if (obs.type === 'median_block' || obs.type === 'roadside_building') {
                     obs.lastHitTime = now;
-                    // Lateral deflection bounce away from median divider block
+                    // Lateral deflection bounce away from median divider block or building
                     const bounceDir = (playerPos.x <= obs.x) ? -1 : 1;
-                    playerPos.x = obs.x + bounceDir * (halfW + 0.2);
+                    playerPos.x = obs.x + bounceDir * (halfW + 0.3);
                 } else {
                     obs.hit = true;
                 }
