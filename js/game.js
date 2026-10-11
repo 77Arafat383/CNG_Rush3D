@@ -14,6 +14,7 @@ class GameEngine {
         this.lastTime = performance.now();
         this.refueling = false;
         this.repairServicing = false;
+        this.isNightMode = false;
 
         // Start animation loop
         requestAnimationFrame((t) => this.loop(t));
@@ -69,6 +70,52 @@ class GameEngine {
         this.scene.add(this.lights.ambient, this.lights.directional);
     }
 
+    setNightMode(active) {
+        this.isNightMode = active;
+
+        if (active) {
+            this.scene.background.setHex(0x0a1122);
+            this.scene.fog.color.setHex(0x0a1122);
+            this.scene.fog.density = 0.008;
+
+            this.lights.ambient.color.setHex(0x223355);
+            this.lights.ambient.intensity = 0.35;
+
+            this.lights.directional.color.setHex(0x4466aa);
+            this.lights.directional.intensity = 0.35;
+
+            if (this.player && this.player.setHeadlights) {
+                this.player.setHeadlights(true);
+            }
+            window.ui.showFloatingText('🌙 NIGHT MODE ACTIVATED', '#64b5f6');
+        } else {
+            const isRain = this.events && this.events.isRaining;
+            const skyColor = isRain ? 0x607d8b : 0xb0bec5;
+            this.scene.background.setHex(skyColor);
+            this.scene.fog.color.setHex(skyColor);
+            this.scene.fog.density = 0.007;
+
+            this.lights.ambient.color.setHex(isRain ? 0x556677 : 0xffffff);
+            this.lights.ambient.intensity = isRain ? 0.55 : 0.75;
+
+            this.lights.directional.color.setHex(0xfffaed);
+            this.lights.directional.intensity = isRain ? 0.55 : 0.85;
+
+            if (this.player && this.player.setHeadlights) {
+                this.player.setHeadlights(false);
+            }
+            window.ui.showFloatingText('☀️ DAY MODE ACTIVATED', '#ffd54f');
+        }
+
+        if (window.ui && window.ui.updateNightButton) {
+            window.ui.updateNightButton(this.isNightMode);
+        }
+    }
+
+    toggleNightMode() {
+        this.setNightMode(!this.isNightMode);
+    }
+
     initEntities() {
         this.player = new PlayerCNG(this.scene);
         window.player = this.player;
@@ -109,6 +156,7 @@ class GameEngine {
         this.events.clear();
 
         const currentLvl = window.levelManager.getCurrentLevel();
+        this.player.setLevelSpeed(currentLvl.topSpeedKmh || 60);
         this.traffic.setLevelDensity(currentLvl.trafficDensity);
         this.events.setRain(currentLvl.hasRain, this.lights);
 
@@ -172,10 +220,7 @@ class GameEngine {
         const currentLvl = window.levelManager.getCurrentLevel();
         this.traffic.setLevelDensity(currentLvl.trafficDensity);
         this.events.setRain(currentLvl.hasRain, this.lights);
-
-        // Refuel and repair vehicle slightly for new level
-        this.player.condition = Math.min(100, this.player.condition + 25);
-        this.player.refuel(0);
+        this.player.setLevelSpeed(currentLvl.topSpeedKmh || 60);
 
         window.ui.showFloatingText(`NOW ENTERING: ${currentLvl.title.toUpperCase()}!`, '#ffd700');
         this.lastTime = performance.now();
@@ -345,14 +390,11 @@ class GameEngine {
                 if (newLevel) {
                     this.traffic.setLevelDensity(newLevel.trafficDensity);
                     this.events.setRain(newLevel.hasRain, this.lights);
-
-                    // Refuel & durability replenishment bonus (free on level completion)
-                    this.player.condition = Math.min(100, this.player.condition + 25);
-                    this.player.refuel(0);
+                    this.player.setLevelSpeed(newLevel.topSpeedKmh || 60);
 
                     window.soundManager.playFanfare();
-                    window.ui.showFloatingText(`🎉 ENTERING: ${newLevel.title.toUpperCase()}!`, '#ffd700');
-                    window.ui.showSpeechBubble(`স্বাগতম! ${newLevel.bengaliTitle} শুরু হয়েছে! সাবধানে চালান!`, 3.5);
+                    window.ui.showFloatingText(`🎉 ${newLevel.title.toUpperCase()}! ⚡ TOP SPEED: ${newLevel.topSpeedKmh} KM/H!`, '#ffd700');
+                    window.ui.showSpeechBubble(`স্বাগতম! ${newLevel.bengaliTitle} শুরু হয়েছে! সর্বোচ্চ গতি এখন ${newLevel.topSpeedKmh} km/h!`, 3.5);
                 }
             }
         }

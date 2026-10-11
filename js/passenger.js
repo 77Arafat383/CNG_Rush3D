@@ -360,8 +360,10 @@ class PassengerManager {
                 this.pickupMarker.userData.diamond.rotation.y += 2.0 * dt;
             }
             if (this.pickupMarker.userData.banner) {
-                // Gently face towards incoming player
-                this.pickupMarker.userData.banner.rotation.y = Math.sin(Date.now() * 0.002) * 0.25;
+                // Dynamically face the player so the signboard text is never mirrored or reversed!
+                const dx = playerPos.x - this.pickupMarker.position.x;
+                const dz = playerPos.z - this.pickupMarker.position.z;
+                this.pickupMarker.userData.banner.rotation.y = Math.atan2(dx, dz);
             }
             if (this.pickupMarker.userData.groundRing) {
                 const s = 1.0 + Math.sin(Date.now() * 0.006) * 0.15;
@@ -381,7 +383,10 @@ class PassengerManager {
                 this.destMarker.userData.star.rotation.y += 1.8 * dt;
             }
             if (this.destMarker.userData.banner) {
-                this.destMarker.userData.banner.rotation.y = Math.sin(Date.now() * 0.002) * 0.25;
+                // Dynamically face the player so destination text is never mirrored or reversed!
+                const dx = playerPos.x - this.destMarker.position.x;
+                const dz = playerPos.z - this.destMarker.position.z;
+                this.destMarker.userData.banner.rotation.y = Math.atan2(dx, dz);
             }
         }
 

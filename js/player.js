@@ -53,6 +53,9 @@ class PlayerCNG {
         // Smoke particles when damaged
         this.initSmokeParticles();
 
+        // Night mode headlights
+        this.initHeadlights();
+
         // Input state
         this.inputs = {
             forward: false,
@@ -76,6 +79,11 @@ class PlayerCNG {
                 e.preventDefault();
                 this.inputs.horn = true;
             }
+            if (key === 'n') {
+                if (window.game && window.game.toggleNightMode) {
+                    window.game.toggleNightMode();
+                }
+            }
         });
 
         window.addEventListener('keyup', (e) => {
@@ -89,6 +97,37 @@ class PlayerCNG {
                 this.hornActive = false;
             }
         });
+    }
+
+    initHeadlights() {
+        // Night mode forward Spotlight
+        this.headlightSpot = new THREE.SpotLight(0xfff5cc, 4.0, 65, Math.PI / 4.2, 0.45, 1.0);
+        this.headlightSpot.position.set(0, 0.85, 1.85);
+        this.headlightTarget = new THREE.Object3D();
+        this.headlightTarget.position.set(0, 0.2, 28);
+        this.mesh.add(this.headlightSpot);
+        this.mesh.add(this.headlightTarget);
+        this.headlightSpot.target = this.headlightTarget;
+        this.headlightSpot.visible = false;
+
+        // Front glowing light corona for night visual
+        const glowGeo = new THREE.SphereGeometry(0.2, 12, 12);
+        const glowMat = new THREE.MeshBasicMaterial({ color: 0xfffae0, transparent: true, opacity: 0.95 });
+        this.headlightGlow = new THREE.Mesh(glowGeo, glowMat);
+        this.headlightGlow.position.set(0, 0.75, 1.9);
+        this.headlightGlow.visible = false;
+        this.mesh.add(this.headlightGlow);
+    }
+
+    setHeadlights(active) {
+        if (this.headlightSpot) this.headlightSpot.visible = active;
+        if (this.headlightGlow) this.headlightGlow.visible = active;
+    }
+
+    setLevelSpeed(topSpeedKmh) {
+        this.topSpeedKmh = topSpeedKmh;
+        this.maxSpeed = topSpeedKmh / 3.6; // 60 km/h -> 16.67, 70 -> 19.44, 80 -> 22.22, 90 -> 25.0, 100 -> 27.78
+        this.accel = 5.2 * (topSpeedKmh / 60); // Scales acceleration naturally
     }
 
     initSmokeParticles() {
@@ -151,6 +190,12 @@ class PlayerCNG {
         this.inWater = false;
         this.buildingHitCooldown = 0;
         this.smokeParticles.forEach(p => p.visible = false);
+
+        // Maintain level-appropriate speed
+        const lvl = (window.levelManager && window.levelManager.getCurrentLevel) ? window.levelManager.getCurrentLevel() : null;
+        if (lvl && lvl.topSpeedKmh) {
+            this.setLevelSpeed(lvl.topSpeedKmh);
+        }
     }
 
     takeDamage(amount) {

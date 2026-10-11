@@ -10,6 +10,7 @@ const LEVELS = [
         description: 'Light traffic, sunny weather, straightforward passenger delivery. Learn controls and pickup.',
         trafficDensity: 1,
         hasRain: false,
+        topSpeedKmh: 60,
         tripsRequired: 2,
         targetEarnings: 380,
         unlockedPassengerTypes: ['student', 'elderly']
@@ -21,6 +22,7 @@ const LEVELS = [
         description: 'Buses, cycle rickshaws, route choices (shortcuts vs safe road), and pedestrian crossing.',
         trafficDensity: 2,
         hasRain: false,
+        topSpeedKmh: 70,
         tripsRequired: 3,
         targetEarnings: 600,
         unlockedPassengerTypes: ['student', 'elderly', 'office']
@@ -32,6 +34,7 @@ const LEVELS = [
         description: 'Monsoon showers, slippery roads, flooded patches, and hazardous potholes.',
         trafficDensity: 3,
         hasRain: true,
+        topSpeedKmh: 80,
         tripsRequired: 3,
         targetEarnings: 650,
         unlockedPassengerTypes: ['student', 'elderly', 'office', 'family']
@@ -43,8 +46,21 @@ const LEVELS = [
         description: 'Dense traffic jams, road construction blockades, busy junctions, and impatient passengers.',
         trafficDensity: 4,
         hasRain: false,
-        tripsRequired: 4,
+        topSpeedKmh: 90,
+        tripsRequired: 3,
         targetEarnings: 800,
+        unlockedPassengerTypes: ['student', 'elderly', 'office', 'family']
+    },
+    {
+        id: 5,
+        title: 'Level 5: Highway Dash',
+        bengaliTitle: 'লেভেল ৫: ঢাকা এক্সপ্রেসওয়ে',
+        description: 'Open expressway, high-speed rush, max 100 km/h top speed, big passenger rewards!',
+        trafficDensity: 4,
+        hasRain: false,
+        topSpeedKmh: 100,
+        tripsRequired: 4,
+        targetEarnings: 1000,
         unlockedPassengerTypes: ['student', 'elderly', 'office', 'family']
     }
 ];

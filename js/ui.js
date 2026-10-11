@@ -41,9 +41,10 @@ class UIManager {
         this.elPatienceBar = document.getElementById('card-patience-bar');
         this.elPassNote = document.getElementById('card-note');
 
-        // Pause Menu Controls
+        // Pause & HUD Controls
         this.btnPauseCamera = document.getElementById('btn-pause-camera');
         this.btnPauseAudio = document.getElementById('btn-pause-audio');
+        this.btnNightToggle = document.getElementById('btn-night-toggle');
 
         // Touch controls
         this.touchControls = document.getElementById('touch-controls');
@@ -73,6 +74,16 @@ class UIManager {
                 if (confirm('Are you sure you want to exit?')) {
                     window.close();
                     this.showFloatingText('You can now safely close this browser tab.', '#f87171');
+                }
+            });
+        }
+
+        // HUD Night Mode Toggle button
+        if (this.btnNightToggle) {
+            this.btnNightToggle.addEventListener('click', () => {
+                window.soundManager.playClick();
+                if (window.game && window.game.toggleNightMode) {
+                    window.game.toggleNightMode();
                 }
             });
         }
@@ -152,10 +163,22 @@ class UIManager {
                     this.showFloatingText(mode === 'DRIVER' ? '🎥 DRIVER COCKPIT VIEW' : '🎥 CHASE VIEW', '#00e5ff');
                 }
             }
+            if (e.key === 'n' || e.key === 'N') {
+                if (window.game && window.game.toggleNightMode) {
+                    window.game.toggleNightMode();
+                }
+            }
             if ((e.key === 'r' || e.key === 'R') && (window.game.state === 'GAME_OVER' || window.game.state === 'DAY_COMPLETE' || window.game.state === 'PAUSED')) {
                 window.game.restartGame();
             }
         });
+    }
+
+    updateNightButton(isNight) {
+        if (this.btnNightToggle) {
+            this.btnNightToggle.innerText = isNight ? '☀️' : '🌙';
+            this.btnNightToggle.title = isNight ? 'Switch to Day Mode (Press N)' : 'Switch to Night Mode (Press N)';
+        }
     }
 
     updatePauseMenuLabels() {
